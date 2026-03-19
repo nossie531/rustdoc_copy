@@ -181,7 +181,7 @@ Document components is specified by path with following components.
 
 Section identification by title has two subtly different styles.
 
-- _Comon rule_
+- _Common rule_
 
   - All uppercase characters are converted to lowercase.
   - Special characters like puctuation and Emoji are ignored.
