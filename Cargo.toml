@@ -1,0 +1,22 @@
+[workspace]
+members = ["macros"]
+
+[workspace.package]
+authors = ["Nossie531"]
+edition = "2024"
+repository = "https://github.com/nossie531/rustdoc_copy"
+license = "MIT"
+
+[package]
+name = "rustdoc_copy"
+version = "0.1.0"
+description = "Rustdoc comment copy helper."
+keywords = ["documentation", "rustdoc"]
+categories = ["development-tools"]
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+rustdoc_copy_macro = { version = "=0.1.0", path = "macros" }

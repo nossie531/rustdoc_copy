@@ -1,0 +1,286 @@
+//! Provider of [`DocChunk`].
+
+use crate::doc::terms::*;
+use crate::doc::*;
+use crate::util::md_tool::*;
+use crate::util::syn_tool::*;
+use crate::util::*;
+use crate::*;
+use proc_macro2::TokenStream;
+use pulldown_cmark::{CowStr, Event, LinkType, Tag};
+use std::cell::{Ref, RefCell, RefMut};
+use std::collections::{HashMap, HashSet};
+use std::rc::{Rc, Weak};
+
+/// Copy guard definition key.
+const COPY_GUARD: &str = "!copy_guard";
+
+/// Markdown document chunk.
+///
+/// Document chunks are created from one of the following.
+///
+/// - Root of document
+/// - Section of document
+#[derive(Clone, Debug)]
+pub(crate) struct DocChunk<'a>(Rc<RefCell<DocChunkBody<'a>>>);
+
+/// Body of [`DocChunk`].
+#[derive(Default, Debug)]
+pub(crate) struct DocChunkBody<'a> {
+    /// Heading level.
+    level: u8,
+    /// Markdown Fragment ID of this chunk.
+    md_id: Option<String>,
+    /// Rust ID of this chunk.
+    rs_id: Option<String>,
+    /// Events of head.
+    head_events: Vec<Event<'a>>,
+    /// Events of body.
+    body_events: Vec<Event<'a>>,
+    /// Definitions.
+    defs: Rc<HashMap<String, String>>,
+    /// Parent chunk.
+    parent: Option<Weak<RefCell<DocChunkBody<'a>>>>,
+    /// Child chunks.
+    chunks: Vec<DocChunk<'a>>,
+}
+
+impl<'a> DocChunk<'a> {
+    /// Creates a new instance by parsing Markdown.
+    pub fn parse(md: &'a str) -> Self {
+        doc::parse_doc(md)
+    }
+
+    /// Creates a new root.
+    pub fn new_root(defs: HashMap<String, String>) -> Self {
+        Self(Rc::new(RefCell::new(DocChunkBody {
+            defs: Rc::new(defs),
+            ..Default::default()
+        })))
+    }
+
+    /// Creates a new chunk.
+    pub fn new_chunk(level: u8) -> Self {
+        Self(Rc::new(RefCell::new(DocChunkBody {
+            level,
+            ..Default::default()
+        })))
+    }
+
+    /// Returns borrowed body.
+    pub fn borrow(&self) -> Ref<'_, DocChunkBody<'a>> {
+        self.0.borrow()
+    }
+
+    /// Returns mutable borrowed body.
+    pub fn borrow_mut(&self) -> RefMut<'_, DocChunkBody<'a>> {
+        self.0.borrow_mut()
+    }
+
+    /// Returns tokens.
+    pub fn print(&self, path: &syn::Path) -> TokenStream {
+        doc::print_doc(self, path)
+    }
+
+    /// Returns tokens in given module.
+    pub fn print_in(&self, mod_id: &syn::Ident) -> TokenStream {
+        let mod_path = &ns::path([mod_id]);
+        let doc_tokens = &self.print(mod_path);
+        templates::module(mod_id, doc_tokens)
+    }
+
+    /// Returns the target where the given chunk should be added.
+    pub fn seek_parent(&self, child: &DocChunk) -> Self {
+        let mut curr = self.clone();
+
+        while curr.borrow().level() >= child.borrow().level() {
+            let curr_ref = curr.borrow();
+            let parent = curr_ref.parent.as_ref().cloned();
+            let Some(parent) = parent else { break };
+            drop(curr_ref);
+            curr = DocChunk(parent.upgrade().unwrap());
+        }
+
+        curr
+    }
+
+    /// Appends block.
+    pub fn append_block(&mut self, block: Vec<Event<'a>>) {
+        let this = &mut self.borrow_mut();
+        if this.head_events.is_empty() {
+            this.head_events = block;
+        } else {
+            this.body_events.extend(block);
+        }
+    }
+
+    /// Appends child chunk.
+    pub fn append_chunk(&mut self, child: DocChunk<'a>) -> Self {
+        let this = &mut self.borrow_mut();
+        this.chunks.push(child.clone());
+        child.borrow_mut().defs = this.defs.clone();
+        child.borrow_mut().parent = Some(Rc::downgrade(&self.0));
+        child
+    }
+
+    /// Assigns unique ID to each chunk.
+    pub fn assign_chunk_ids(&mut self) {
+        let md_ids = &mut HashSet::new();
+        let rs_ids = &mut HashSet::new();
+        traverse(self.clone(), md_ids, rs_ids);
+
+        // Traverse chunks.
+        fn traverse(chunk: DocChunk, md_ids: &mut HashSet<String>, rs_ids: &mut HashSet<String>) {
+            let this = &mut chunk.borrow_mut();
+
+            if !this.title().is_empty() {
+                let md_id = chunk_id::md_id(&this.title(), md_ids);
+                let rs_id = chunk_id::rs_id(&this.title(), rs_ids);
+                this.md_id = Some(md_id.clone());
+                this.rs_id = Some(rs_id.clone());
+                md_ids.insert(md_id);
+                rs_ids.insert(rs_id);
+            }
+
+            // Traverse child chunks.
+            let rs_ids = &mut HashSet::new();
+            for chunk in this.chunks.iter().cloned() {
+                traverse(chunk, md_ids, rs_ids);
+            }
+        }
+    }
+
+    /// Returns document chank matched given key.
+    pub fn extract(&mut self, key: Option<&str>) -> Option<Self> {
+        let chunk = &mut find(self, key)?;
+        adjust_root_heading(chunk, matches!(key, Some(MdPath::ANONYMOUS_ROOT)));
+        adjust_tree_level(chunk, level_delta(chunk, key));
+        return Some(chunk.clone());
+
+        // Find chunk.
+        fn find<'a>(chunk: &DocChunk<'a>, key: Option<&str>) -> Option<DocChunk<'a>> {
+            if is_hit(chunk, key) {
+                Some(chunk.clone())
+            } else {
+                chunk.borrow().chunks().find_map(|x| find(&x, key))
+            }
+        }
+
+        // Returns `true` if key is hit at chunk.
+        fn is_hit(chunk: &DocChunk, key: Option<&str>) -> bool {
+            let Some(key) = key else { return true };
+            let root_hit = chunk.borrow().level() == 1 && key == MdPath::ANONYMOUS_ROOT;
+            let normal_hit = chunk.borrow().md_id.as_deref() == Some(key);
+            root_hit || normal_hit
+        }
+
+        // Returns delta of heading levels.
+        fn level_delta(chunk: &DocChunk, key: Option<&str>) -> i8 {
+            match key {
+                None => 0,
+                Some(MdPath::ANONYMOUS_ROOT) => -1,
+                _ => 1 - (chunk.borrow().level() as i8),
+            }
+        }
+
+        // Adjust root heading.
+        fn adjust_root_heading(chunk: &mut DocChunk, no_heading: bool) {
+            if no_heading {
+                chunk.borrow_mut().head_events.clear();
+            }
+        }
+
+        // Adjust heading level in sub tree.
+        fn adjust_tree_level(chunk: &mut DocChunk, delta: i8) {
+            adjust_chunk_level(chunk, delta);
+            for mut chunk in chunk.borrow().chunks.iter().cloned() {
+                adjust_tree_level(&mut chunk, delta);
+            }
+        }
+
+        // Adjust heading level of document chunk.
+        fn adjust_chunk_level(chunk: &mut DocChunk, delta: i8) {
+            let chunk = &mut chunk.borrow_mut();
+            let old_events = chunk.head_events.drain(..);
+            let new_events = old_events.map(|x| md_tool::add_level(x, delta));
+            let imports = new_events.collect::<Vec<_>>();
+            chunk.head_events.extend(imports);
+        }
+    }
+}
+
+impl<'a> DocChunkBody<'a> {
+    /// Returns `true` if this chunk is root.
+    pub fn is_root(&self) -> bool {
+        self.parent.is_none()
+    }
+
+    /// Returns the level
+    pub fn level(&self) -> u8 {
+        self.level
+    }
+
+    /// Returns Rust ID of this chunk.
+    pub fn rust_id(&self) -> Option<&str> {
+        self.rs_id.as_deref()
+    }
+
+    /// Returns title.
+    pub fn title(&self) -> String {
+        md_tool::text(&mut self.head_events())
+    }
+
+    /// Returns events of heading.
+    pub fn head_events(&self) -> impl Iterator<Item = Event<'a>> {
+        self.head_events.iter().map(|x| self.adjust_link(x))
+    }
+
+    /// Returns events of body.
+    pub fn body_events(&self) -> impl Iterator<Item = Event<'a>> {
+        self.body_events.iter().map(|x| self.adjust_link(x))
+    }
+
+    /// Returns definitions blocks.
+    pub fn defs(&self) -> impl Iterator<Item = (&str, &str)> {
+        let cg_base = self.defs.get(COPY_GUARD);
+        self.defs
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .filter(move |(_, url)| cg_base.is_none_or(|x| !url.starts_with(x)))
+    }
+
+    /// Returns chunks.
+    pub fn chunks(&self) -> impl Iterator<Item = DocChunk<'a>> {
+        self.chunks.iter().cloned()
+    }
+
+    /// Adjust link event.
+    fn adjust_link<'x>(&self, event: &Event<'x>) -> Event<'x> {
+        let event = md_tool::embed_link(event);
+
+        let Some(cg_base) = self.defs.get(COPY_GUARD) else {
+            return event;
+        };
+
+        let Some(url_event) = UrlEvent::try_new_link(&event) else {
+            return event;
+        };
+
+        if !url_event.dest_url.starts_with(cg_base) {
+            return event;
+        }
+
+        Event::Start(Tag::Link {
+            dest_url: CowStr::Borrowed(""),
+            title: url_event.title.clone(),
+            id: url_event.id.clone(),
+            link_type: match url_event.link_type {
+                LinkType::Reference => LinkType::ReferenceUnknown,
+                LinkType::Collapsed => LinkType::CollapsedUnknown,
+                LinkType::Shortcut => LinkType::ShortcutUnknown,
+                LinkType::Inline => LinkType::ShortcutUnknown,
+                _ => return event,
+            },
+        })
+    }
+}

@@ -1,0 +1,19 @@
+[package]
+name = "rustdoc_copy_macro"
+version = "0.1.0"
+description = "Macros for `rustdoc_copy`"
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+pulldown-cmark = { version = "0.13.0", default-features = false }
+pulldown-cmark-to-cmark = "22"
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }
+unicode-ident = "1"
