@@ -23,6 +23,52 @@ fn test_fn() {
 }
 
 #[test]
+fn test_macro() {
+    let asis = doc::all!();
+    assert_eq!(asis.trim(), "Target document.");
+
+    /// Target document.
+    #[doc_share(doc)]
+    #[allow(unused)]
+    macro_rules! target_item {
+        () => {};
+    }
+}
+
+#[test]
+fn test_mod() {
+    let asis = doc::all!();
+    assert_eq!(asis.trim(), "Target document.");
+
+    /// Target document.
+    #[doc_share(doc)]
+    #[allow(unused)]
+    mod target_item {}
+}
+
+#[test]
+fn test_static() {
+    let asis = doc::all!();
+    assert_eq!(asis.trim(), "Target document.");
+
+    /// Target document.
+    #[doc_share(doc)]
+    #[allow(unused)]
+    static TARGET_ITEM: i32 = 42;
+}
+
+#[test]
+fn test_type() {
+    let asis = doc::all!();
+    assert_eq!(asis.trim(), "Target document.");
+
+    /// Target document.
+    #[doc_share(doc)]
+    #[allow(unused)]
+    type TargetItem = i32;
+}
+
+#[test]
 fn test_enum() {
     let datas = [
         (doc::base::all!(), "Base document."),
@@ -83,41 +129,6 @@ fn test_impl() {
         /// Some type.
         type Type = i32;
     }
-}
-
-#[test]
-fn test_macro() {
-    let asis = doc::all!();
-    assert_eq!(asis.trim(), "Target document.");
-
-    /// Target document.
-    #[doc_share(doc)]
-    #[allow(unused)]
-    macro_rules! target_item {
-        () => {};
-    }
-}
-
-#[test]
-fn test_mod() {
-    let asis = doc::all!();
-    assert_eq!(asis.trim(), "Target document.");
-
-    /// Target document.
-    #[doc_share(doc)]
-    #[allow(unused)]
-    mod target_item {}
-}
-
-#[test]
-fn test_static() {
-    let asis = doc::all!();
-    assert_eq!(asis.trim(), "Target document.");
-
-    /// Target document.
-    #[doc_share(doc)]
-    #[allow(unused)]
-    static TARGET_ITEM: i32 = 42;
 }
 
 #[test]
@@ -193,15 +204,4 @@ fn test_trait() {
         /// Some method.
         fn method();
     }
-}
-
-#[test]
-fn test_type() {
-    let asis = doc::all!();
-    assert_eq!(asis.trim(), "Target document.");
-
-    /// Target document.
-    #[doc_share(doc)]
-    #[allow(unused)]
-    type TargetItem = i32;
 }
