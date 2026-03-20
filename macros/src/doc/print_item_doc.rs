@@ -45,23 +45,9 @@ fn print_base_and_sides<T>(item: &T, mod_id: &syn::Ident) -> TokenStream
 where 
     T: AbstItem,
 {
-    let base_macros = print_base(item, mod_id);
-    let side_macros = print_sides(item, mod_id);
-    return templates::base_and_sides(base_macros, side_macros);
-
-    fn print_sides<T>(item: &T, mod_id: &syn::Ident) -> TokenStream
-    where 
-        T: AbstItem,
-    {
-        let mut ret = TokenStream::new();
-        for side in item.sides() {
-            let id = &side.0;
-            let attrs = &side.1;
-            ret.extend(print_side(mod_id, id, attrs));
-        }
-
-        ret        
-    }
+    let base = print_base(item, mod_id);
+    let sides = print_sides(item, mod_id);
+    return templates::base_and_sides(base, sides);
 }
 
 /// Returns base module tokens.
@@ -73,6 +59,21 @@ where
     let chunk = &DocChunk::parse(md);
     let base_path = &ns::path([mod_id, &ids::base()]);
     chunk.print(base_path)
+}
+
+/// Returns sides module tokens.
+fn print_sides<T>(item: &T, mod_id: &syn::Ident) -> TokenStream
+where 
+    T: AbstItem,
+{
+    let mut ret = TokenStream::new();
+    for side in item.sides() {
+        let id = &side.0;
+        let attrs = &side.1;
+        ret.extend(print_side(mod_id, id, attrs));
+    }
+
+    ret        
 }
 
 /// Returns side module tokens.
