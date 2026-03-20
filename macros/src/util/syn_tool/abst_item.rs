@@ -1,7 +1,7 @@
 //! Provider of [`AbstItem`].
 
-use syn::Attribute;
 use crate::util::syn_tool::*;
+use syn::Attribute;
 
 /// Abstracted item.
 pub(crate) trait AbstItem {

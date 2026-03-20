@@ -53,4 +53,3 @@ pub(crate) fn base_and_sides(base: TokenStream, sides: TokenStream) -> TokenStre
         }
     }
 }
-

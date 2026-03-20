@@ -48,7 +48,7 @@ pub(crate) fn add_level<'a>(event: Event<'a>, delta: i8) -> Event<'a> {
 }
 
 /// Retruns event with embeding definitions style.
-pub(crate) fn embed_link<'a>(event: &Event<'a>) -> Event<'a> {
+pub(crate) fn embed_url<'a>(event: &Event<'a>) -> Event<'a> {
     return match event {
         Event::Start(Tag::Link { .. }) => {
             let url_event = &mut UrlEvent::try_new(event).unwrap();

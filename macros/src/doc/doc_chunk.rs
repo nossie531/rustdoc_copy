@@ -232,21 +232,25 @@ impl<'a> DocChunkBody<'a> {
 
     /// Returns events of heading.
     pub fn head_events(&self) -> impl Iterator<Item = Event<'a>> {
-        self.head_events.iter().map(|x| self.adjust_link(x))
+        self.head_events.iter().map(|x| self.adjust_url_event(x))
     }
 
     /// Returns events of body.
     pub fn body_events(&self) -> impl Iterator<Item = Event<'a>> {
-        self.body_events.iter().map(|x| self.adjust_link(x))
+        self.body_events.iter().map(|x| self.adjust_url_event(x))
+    }
+
+    /// Returns copy guard URL root.
+    pub fn copy_guard(&self) -> Option<&str> {
+        self.defs.get(COPY_GUARD).map(|x| x.as_str())
     }
 
     /// Returns definitions blocks.
     pub fn defs(&self) -> impl Iterator<Item = (&str, &str)> {
-        let cg_base = self.defs.get(COPY_GUARD);
         self.defs
             .iter()
             .map(|(k, v)| (k.as_str(), v.as_str()))
-            .filter(move |(_, url)| cg_base.is_none_or(|x| !url.starts_with(x)))
+            .filter(move |(_, url)| !self.guards_url(url))
     }
 
     /// Returns chunks.
@@ -254,20 +258,25 @@ impl<'a> DocChunkBody<'a> {
         self.chunks.iter().cloned()
     }
 
-    /// Adjust link event.
-    fn adjust_link<'x>(&self, event: &Event<'x>) -> Event<'x> {
-        let event = md_tool::embed_link(event);
+    /// Returns `true` if given URL is guarded.
+    pub fn guards_url(&self, url: &str) -> bool {
+        self.copy_guard().is_some_and(|x| url.starts_with(x))
+    }
 
-        let Some(cg_base) = self.defs.get(COPY_GUARD) else {
-            return event;
+    /// Adjust URL event.
+    fn adjust_url_event<'x>(&self, event: &Event<'x>) -> Event<'x> {
+        let event = &self.adjust_url_event_by_copy_guard(event);
+        md_tool::embed_url(event)
+    }
+
+    /// Adjust URL event by copy guard.    
+    fn adjust_url_event_by_copy_guard<'x>(&self, event: &Event<'x>) -> Event<'x> {
+        let Some(url_event) = UrlEvent::try_new_link(event) else {
+            return event.clone();
         };
 
-        let Some(url_event) = UrlEvent::try_new_link(&event) else {
-            return event;
-        };
-
-        if !url_event.dest_url.starts_with(cg_base) {
-            return event;
+        if !self.guards_url(&url_event.dest_url) {
+            return event.clone();
         }
 
         Event::Start(Tag::Link {
@@ -279,7 +288,7 @@ impl<'a> DocChunkBody<'a> {
                 LinkType::Collapsed => LinkType::CollapsedUnknown,
                 LinkType::Shortcut => LinkType::ShortcutUnknown,
                 LinkType::Inline => LinkType::ShortcutUnknown,
-                _ => return event,
+                _ => return event.clone(),
             },
         })
     }

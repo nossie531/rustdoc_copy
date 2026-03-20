@@ -7,9 +7,9 @@ use crate::*;
 use syn::Attribute;
 
 /// Returns document module tokens from item.
-/// 
+///
 /// # Panics
-/// 
+///
 /// Panics if item is unexpected type.
 pub(crate) fn print_item_doc(item: &syn::Item, mod_id: &syn::Ident) -> TokenStream {
     let mod_content = &match item {
@@ -31,7 +31,7 @@ pub(crate) fn print_item_doc(item: &syn::Item, mod_id: &syn::Ident) -> TokenStre
 
 /// Returns single item tokens.
 fn print_single<T>(item: &T, mod_id: &syn::Ident) -> TokenStream
-where 
+where
     T: AbstItem,
 {
     let md = &doc_attr::read(item.attrs());
@@ -42,12 +42,12 @@ where
 
 /// Returns base and side tokens.
 fn print_base_and_sides<T>(item: &T, mod_id: &syn::Ident) -> TokenStream
-where 
+where
     T: AbstItem,
 {
     let base = print_base(item, mod_id);
     let sides = print_sides(item, mod_id);
-    return templates::base_and_sides(base, sides);
+    templates::base_and_sides(base, sides)
 }
 
 /// Returns base module tokens.
@@ -63,7 +63,7 @@ where
 
 /// Returns sides module tokens.
 fn print_sides<T>(item: &T, mod_id: &syn::Ident) -> TokenStream
-where 
+where
     T: AbstItem,
 {
     let mut ret = TokenStream::new();
@@ -73,7 +73,7 @@ where
         ret.extend(print_side(mod_id, id, attrs));
     }
 
-    ret        
+    ret
 }
 
 /// Returns side module tokens.

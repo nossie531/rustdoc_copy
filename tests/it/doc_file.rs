@@ -212,6 +212,7 @@ fn with_copy_guard() {
     let datas = [
         (sub::inline::body!(), "[link]"),
         (sub::shortcut::body!(), "[link-sc]"),
+        (sub::reference::body!(), "[link-ref][link-ref]"),
     ];
 
     for (asis, tobe) in datas {
