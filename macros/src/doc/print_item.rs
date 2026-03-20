@@ -11,7 +11,7 @@ use syn::Attribute;
 /// # Panics
 ///
 /// Panics if item is unexpected type.
-pub(crate) fn print_item_doc(item: &syn::Item, mod_id: &syn::Ident) -> TokenStream {
+pub(crate) fn print_item(item: &syn::Item, mod_id: &syn::Ident) -> TokenStream {
     let mod_content = &match item {
         syn::Item::Const(x) => print_single(x, mod_id),
         syn::Item::Fn(x) => print_single(x, mod_id),

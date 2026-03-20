@@ -1,6 +1,6 @@
 //! Document system.
 
-pub(crate) mod print_item_doc;
+pub(crate) mod print_item;
 pub(crate) use doc_chunk::*;
 
 mod chunk_for_print;

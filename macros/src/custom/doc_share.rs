@@ -98,6 +98,6 @@ impl ToTokens for DocShare {
         let mod_id = self.mod_id();
         let syn_item = self.syn_item();
         tokens.extend(syn_item.into_token_stream());
-        tokens.extend(print_item_doc::print_item_doc(syn_item, mod_id));
+        tokens.extend(print_item::print_item(syn_item, mod_id));
     }
 }
