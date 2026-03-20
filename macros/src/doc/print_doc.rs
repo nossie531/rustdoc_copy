@@ -10,12 +10,7 @@ use quote::quote;
 use std::iter;
 
 /// Returns document chunk tokens.
-pub(crate) fn print_doc(chunk: &DocChunk, path: &syn::Path) -> TokenStream {
-    doc_node_print(&ChunkForPrint::new(chunk, path))
-}
-
-/// Returns document node tokens.
-fn doc_node_print(chunk: &ChunkForPrint) -> TokenStream {
+pub(crate) fn print_doc(chunk: &ChunkForPrint) -> TokenStream {
     let head_macro = head_macro(chunk);
     let body_macro = body_macro(chunk);
     let defs_macro = defs_macro(chunk);
@@ -111,7 +106,7 @@ fn sub_item_mod(chunk: &DocChunk, path: &syn::Path) -> TokenStream {
     assert!(!chunk.borrow().is_root() && chunk.borrow().rust_id().is_some());
     let mod_id = &ns::id(chunk.borrow().rust_id().unwrap());
     let mod_path = &ns::path_with(path, [mod_id]);
-    let node = ChunkForPrint::new(chunk, mod_path).with_defs(false);
-    let mod_content_tokens = &doc_node_print(&node);
+    let chunk = ChunkForPrint::new(chunk, mod_path).with_defs(false);
+    let mod_content_tokens = &print_doc(&chunk);
     templates::module(mod_id, mod_content_tokens)
 }

@@ -79,7 +79,7 @@ impl<'a> DocChunk<'a> {
 
     /// Returns tokens.
     pub fn print(&self, path: &syn::Path) -> TokenStream {
-        doc::print_doc(self, path)
+        doc::print_doc(&ChunkForPrint::new(self, path))
     }
 
     /// Returns tokens in given module.
