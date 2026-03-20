@@ -93,12 +93,11 @@ fn test_enum() {
 }
 
 #[test]
-fn test_impl() {
+fn test_impl_inherent() {
     let datas = [
         (doc::base::all!(), "Base document."),
         (doc::side::CONST::all!(), "Some const."),
         (doc::side::method::all!(), "Some method."),
-        (doc_impl_for::side::Type::all!(), "Some type."),
     ];
 
     for (text, tobe) in datas {
@@ -107,27 +106,48 @@ fn test_impl() {
     }
 
     #[allow(unused)]
-    struct SomeStruct();
-
-    #[allow(unused)]
-    trait SomeTrait {
-        type Type;
-    }
+    struct SomeType();
 
     /// Base document.
     #[doc_share(doc)]
     #[allow(unused)]
-    impl SomeStruct {
+    impl SomeType {
         /// Some const.
         const CONST: i32 = 42;
         /// Some method.
         fn method() {}
     }
+}
 
-    #[doc_share(doc_impl_for)]
-    impl SomeTrait for SomeStruct {
+#[test]
+fn test_impl_trait() {
+    let datas = [
+        (doc::base::all!(), "Base document."),
+        (doc::side::Type::all!(), "Some type."),
+        (doc::side::method::all!(), "Some method."),
+        ];
+
+    for (text, tobe) in datas {
+        let asis = text.trim();
+        assert_eq!(asis, tobe);
+    }
+
+    #[allow(unused)]
+    struct SomeType();
+
+    #[allow(unused)]
+    trait SomeTrait {
+        type Type;
+        fn method();
+    }
+
+    /// Base document.
+    #[doc_share(doc)]
+    impl SomeTrait for SomeType {
         /// Some type.
         type Type = i32;
+        /// Some method.
+        fn method() {}
     }
 }
 
