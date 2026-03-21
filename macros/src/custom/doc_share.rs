@@ -62,24 +62,14 @@ impl DocShare {
 
     /// Validate inputs.
     pub fn validate(&self) -> Result<(), TokenStream> {
-        match &self.syn_item {
-            syn::Item::Const(_)
-            | syn::Item::Enum(_)
-            | syn::Item::Fn(_)
-            | syn::Item::Impl(_)
-            | syn::Item::Macro(_)
-            | syn::Item::Mod(_)
-            | syn::Item::Static(_)
-            | syn::Item::Struct(_)
-            | syn::Item::Trait(_)
-            | syn::Item::Type(_) => Ok(()),
-            x => {
-                let item = SkipAttr::reparse(x);
-                let err = Error::new_spanned(item, msg::UNEXPECTED_ITEM);
-                let err = err.to_compile_error();
-                Err(err)
-            }
+        if !AbstItem::from_ref(&self.syn_item).is_documentable() {
+            let item = SkipAttr::reparse(&self.syn_item);
+            let err = Error::new_spanned(item, msg::UNEXPECTED_ITEM);
+            let err = err.to_compile_error();
+            return Err(err);
         }
+
+        Ok(())
     }
 }
 

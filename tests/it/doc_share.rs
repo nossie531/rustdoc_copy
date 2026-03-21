@@ -125,7 +125,7 @@ fn test_impl_trait() {
         (doc::base::all!(), "Base document."),
         (doc::side::Type::all!(), "Some type."),
         (doc::side::method::all!(), "Some method."),
-        ];
+    ];
 
     for (text, tobe) in datas {
         let asis = text.trim();

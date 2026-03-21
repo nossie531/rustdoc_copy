@@ -1,74 +1,87 @@
 //! Provider of [`AbstItem`].
 
 use crate::util::syn_tool::*;
-use syn::Attribute;
+use syn::{Attribute, ItemEnum, ItemImpl, ItemStruct, ItemTrait};
 
 /// Abstracted item.
-pub(crate) trait AbstItem {
-    /// Returns attributes of item.
-    fn attrs(&self) -> &Vec<syn::Attribute>;
+#[repr(transparent)]
+pub(crate) struct AbstItem(syn::Item);
+
+impl AbstItem {
+    /// Creates a instance from item reference.
+    pub fn from_ref(r: &syn::Item) -> &Self {
+        unsafe { std::mem::transmute(r) }
+    }
+
+    /// Returns `true` if this item is documentable.
+    pub fn is_documentable(&self) -> bool {
+        #[rustfmt::skip]
+        return matches!(
+            self.0,
+            | syn::Item::Const(_)
+            | syn::Item::Enum(_)
+            | syn::Item::Fn(_)
+            | syn::Item::Impl(_)
+            | syn::Item::Macro(_)
+            | syn::Item::Mod(_)
+            | syn::Item::Static(_)
+            | syn::Item::Struct(_)
+            | syn::Item::Trait(_)
+            | syn::Item::Type(_)
+        );
+    }
+
+    /// Returns `true` if this item has side items.
+    pub fn has_sides(&self) -> bool {
+        #[rustfmt::skip]
+        return matches!(
+            self.0,
+            | syn::Item::Enum(_)
+            | syn::Item::Impl(_)
+            | syn::Item::Struct(_)
+            | syn::Item::Trait(_)
+        );
+    }
+
+    /// Returns attributes.
+    pub fn attrs(&self) -> &Vec<syn::Attribute> {
+        const EMPTY: &Vec<syn::Attribute> = &vec![];
+        match &self.0 {
+            syn::Item::Const(x) => &x.attrs,
+            syn::Item::Fn(x) => &x.attrs,
+            syn::Item::Macro(x) => &x.attrs,
+            syn::Item::Mod(x) => &x.attrs,
+            syn::Item::Static(x) => &x.attrs,
+            syn::Item::Type(x) => &x.attrs,
+            syn::Item::Enum(x) => &x.attrs,
+            syn::Item::Impl(x) => &x.attrs,
+            syn::Item::Struct(x) => &x.attrs,
+            syn::Item::Trait(x) => &x.attrs,
+            _ => EMPTY,
+        }
+    }
 
     /// Returns side items of item.
-    fn sides(&self) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
-        unimplemented!();
-        #[allow(unreachable_code)]
-        [].into_iter()
-    }
-}
-
-impl AbstItem for syn::ItemConst {
-    fn attrs(&self) -> &Vec<syn::Attribute> {
-        &self.attrs
-    }
-}
-
-impl AbstItem for syn::ItemFn {
-    fn attrs(&self) -> &Vec<syn::Attribute> {
-        &self.attrs
-    }
-}
-
-impl AbstItem for syn::ItemMacro {
-    fn attrs(&self) -> &Vec<syn::Attribute> {
-        &self.attrs
-    }
-}
-
-impl AbstItem for syn::ItemMod {
-    fn attrs(&self) -> &Vec<syn::Attribute> {
-        &self.attrs
-    }
-}
-
-impl AbstItem for syn::ItemStatic {
-    fn attrs(&self) -> &Vec<syn::Attribute> {
-        &self.attrs
-    }
-}
-
-impl AbstItem for syn::ItemType {
-    fn attrs(&self) -> &Vec<syn::Attribute> {
-        &self.attrs
-    }
-}
-
-impl AbstItem for syn::ItemEnum {
-    fn attrs(&self) -> &Vec<syn::Attribute> {
-        &self.attrs
+    pub fn sides(&self) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
+        let ret: Box<dyn Iterator<Item = _>> = match &self.0 {
+            syn::Item::Enum(x) => Box::new(Self::enum_variants(x)),
+            syn::Item::Impl(x) => Box::new(Self::impl_items(x)),
+            syn::Item::Struct(x) => Box::new(Self::struct_fields(x)),
+            syn::Item::Trait(x) => Box::new(Self::trait_items(x)),
+            _ => Box::new(vec![].into_iter()),
+        };
+        
+        ret
     }
 
-    fn sides(&self) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
-        self.variants.iter().map(|x| (x.ident.clone(), &x.attrs))
-    }
-}
-
-impl AbstItem for syn::ItemImpl {
-    fn attrs(&self) -> &Vec<syn::Attribute> {
-        &self.attrs
+    /// Returns variants of `enum`.
+    fn enum_variants(item: &ItemEnum) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
+        item.variants.iter().map(|x| (x.ident.clone(), &x.attrs))
     }
 
-    fn sides(&self) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
-        return self.items.iter().filter_map(side);
+    /// Returns implement items.
+    fn impl_items(item: &ItemImpl) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
+        return item.items.iter().filter_map(side);
 
         fn side(impl_item: &syn::ImplItem) -> Option<(syn::Ident, &Vec<Attribute>)> {
             let (id, attrs) = match impl_item {
@@ -81,15 +94,10 @@ impl AbstItem for syn::ItemImpl {
             Some((id.clone(), attrs))
         }
     }
-}
 
-impl AbstItem for syn::ItemStruct {
-    fn attrs(&self) -> &Vec<syn::Attribute> {
-        &self.attrs
-    }
-
-    fn sides(&self) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
-        return self.fields.iter().enumerate().map(|(i, field)| {
+    /// Returns struct fields.
+    fn struct_fields(item: &ItemStruct) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
+        return item.fields.iter().enumerate().map(|(i, field)| {
             let id = field_id(i, field);
             let attrs = &field.attrs;
             (id, attrs)
@@ -104,15 +112,10 @@ impl AbstItem for syn::ItemStruct {
             format!("v{i}")
         }
     }
-}
 
-impl AbstItem for syn::ItemTrait {
-    fn attrs(&self) -> &Vec<syn::Attribute> {
-        &self.attrs
-    }
-
-    fn sides(&self) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
-        return self.items.iter().filter_map(side);
+    /// Returns trait items.
+    fn trait_items(item: &ItemTrait) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
+        return item.items.iter().filter_map(side);
 
         fn side(impl_item: &syn::TraitItem) -> Option<(syn::Ident, &Vec<Attribute>)> {
             let (id, attrs) = match impl_item {

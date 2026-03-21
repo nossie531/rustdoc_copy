@@ -6,9 +6,6 @@ pub const EVENT_SHOULD_BE_BROKEN_LINK: &str = "Event must be broken link.";
 /// Message that assert format to string should be success.
 pub const FORMAT_SHOULD_SUCCESS: &str = "Format to string should be success.";
 
-/// Message that assert item type should be excluded.
-pub const ITEM_SHOULD_EXCLUDED: &str = "This item type should be excluded already.";
-
 /// Message that detect event nest level is underflowed.
 pub const EVENT_NEST_LV_UNDERFLOW: &str = "Event nest level is underflowed.";
 

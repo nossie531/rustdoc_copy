@@ -12,28 +12,18 @@ use syn::Attribute;
 ///
 /// Panics if item is unexpected type.
 pub(crate) fn print_item(item: &syn::Item, mod_id: &syn::Ident) -> TokenStream {
-    let mod_content = &match item {
-        syn::Item::Const(x) => print_single(x, mod_id),
-        syn::Item::Fn(x) => print_single(x, mod_id),
-        syn::Item::Macro(x) => print_single(x, mod_id),
-        syn::Item::Mod(x) => print_single(x, mod_id),
-        syn::Item::Static(x) => print_single(x, mod_id),
-        syn::Item::Type(x) => print_single(x, mod_id),
-        syn::Item::Enum(x) => print_base_and_sides(x, mod_id),
-        syn::Item::Impl(x) => print_base_and_sides(x, mod_id),
-        syn::Item::Struct(x) => print_base_and_sides(x, mod_id),
-        syn::Item::Trait(x) => print_base_and_sides(x, mod_id),
-        _ => panic!("{}", msg::ITEM_SHOULD_EXCLUDED),
+    let item = &AbstItem::from_ref(item);
+    let mod_tokens = &if !item.has_sides() {
+        print_simple(item, mod_id)
+    } else {
+        print_base_and_sides(item, mod_id)
     };
 
-    templates::module(mod_id, mod_content)
+    templates::module(mod_id, mod_tokens)
 }
 
-/// Returns single item tokens.
-fn print_single<T>(item: &T, mod_id: &syn::Ident) -> TokenStream
-where
-    T: AbstItem,
-{
+/// Returns simple item tokens.
+fn print_simple(item: &AbstItem, mod_id: &syn::Ident) -> TokenStream {
     let md = &doc_attr::read(item.attrs());
     let chunk = &DocChunk::parse(md);
     let path = &ns::path([mod_id]);
@@ -41,20 +31,14 @@ where
 }
 
 /// Returns base and side tokens.
-fn print_base_and_sides<T>(item: &T, mod_id: &syn::Ident) -> TokenStream
-where
-    T: AbstItem,
-{
+fn print_base_and_sides(item: &AbstItem, mod_id: &syn::Ident) -> TokenStream {
     let base = print_base(item, mod_id);
     let sides = print_sides(item, mod_id);
     templates::base_and_sides(base, sides)
 }
 
 /// Returns base module tokens.
-fn print_base<T>(item: &T, mod_id: &syn::Ident) -> TokenStream
-where
-    T: AbstItem,
-{
+fn print_base(item: &AbstItem, mod_id: &syn::Ident) -> TokenStream {
     let md = &doc_attr::read(item.attrs());
     let chunk = &DocChunk::parse(md);
     let base_path = &ns::path([mod_id, &ids::base()]);
@@ -62,10 +46,7 @@ where
 }
 
 /// Returns sides module tokens.
-fn print_sides<T>(item: &T, mod_id: &syn::Ident) -> TokenStream
-where
-    T: AbstItem,
-{
+fn print_sides(item: &AbstItem, mod_id: &syn::Ident) -> TokenStream {
     let mut ret = TokenStream::new();
     for side in item.sides() {
         let id = &side.0;
