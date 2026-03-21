@@ -1,13 +1,13 @@
-//! Provider of [`AbstItem`].
+//! Provider of [`RootItem`].
 
 use crate::util::syn_tool::*;
-use syn::{Attribute, ItemEnum, ItemImpl, ItemStruct, ItemTrait};
+use syn::{ItemEnum, ItemImpl, ItemStruct, ItemTrait};
 
-/// Abstracted item.
+/// Root item.
 #[repr(transparent)]
-pub(crate) struct AbstItem(syn::Item);
+pub(crate) struct RootItem(syn::Item);
 
-impl AbstItem {
+impl RootItem {
     /// Creates a instance from item reference.
     pub fn from_ref(r: &syn::Item) -> &Self {
         unsafe { std::mem::transmute(r) }
@@ -62,7 +62,7 @@ impl AbstItem {
     }
 
     /// Returns side items of item.
-    pub fn sides(&self) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
+    pub fn sides(&self) -> impl Iterator<Item = SideItem<'_>> {
         let ret: Box<dyn Iterator<Item = _>> = match &self.0 {
             syn::Item::Enum(x) => Box::new(Self::enum_variants(x)),
             syn::Item::Impl(x) => Box::new(Self::impl_items(x)),
@@ -75,15 +75,15 @@ impl AbstItem {
     }
 
     /// Returns variants of `enum`.
-    fn enum_variants(item: &ItemEnum) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
-        item.variants.iter().map(|x| (x.ident.clone(), &x.attrs))
+    fn enum_variants(item: &ItemEnum) -> impl Iterator<Item = SideItem<'_>> {
+        item.variants.iter().map(|x| SideItem::new(x.ident.to_string(), &x.attrs))
     }
 
     /// Returns implement items.
-    fn impl_items(item: &ItemImpl) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
+    fn impl_items(item: &ItemImpl) -> impl Iterator<Item = SideItem<'_>> {
         return item.items.iter().filter_map(side);
 
-        fn side(impl_item: &syn::ImplItem) -> Option<(syn::Ident, &Vec<Attribute>)> {
+        fn side(impl_item: &syn::ImplItem) -> Option<SideItem<'_>> {
             let (id, attrs) = match impl_item {
                 syn::ImplItem::Fn(x) => (&x.sig.ident, &x.attrs),
                 syn::ImplItem::Type(x) => (&x.ident, &x.attrs),
@@ -91,21 +91,21 @@ impl AbstItem {
                 _ => None?,
             };
 
-            Some((id.clone(), attrs))
+            Some(SideItem::new(id.to_string(), attrs))
         }
     }
 
     /// Returns struct fields.
-    fn struct_fields(item: &ItemStruct) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
+    fn struct_fields(item: &ItemStruct) -> impl Iterator<Item = SideItem<'_>> {
         return item.fields.iter().enumerate().map(|(i, field)| {
             let id = field_id(i, field);
             let attrs = &field.attrs;
-            (id, attrs)
+            SideItem::new(id, attrs)
         });
 
-        fn field_id(i: usize, field: &syn::Field) -> syn::Ident {
+        fn field_id(i: usize, field: &syn::Field) -> String {
             let id = field.ident.as_ref().map(|x| x.to_string());
-            ns::id(&id.unwrap_or(tuple_fild_id(i)))
+            id.unwrap_or(tuple_fild_id(i))
         }
 
         fn tuple_fild_id(i: usize) -> String {
@@ -114,10 +114,10 @@ impl AbstItem {
     }
 
     /// Returns trait items.
-    fn trait_items(item: &ItemTrait) -> impl Iterator<Item = (syn::Ident, &Vec<Attribute>)> {
+    fn trait_items(item: &ItemTrait) -> impl Iterator<Item = SideItem<'_>> {
         return item.items.iter().filter_map(side);
 
-        fn side(impl_item: &syn::TraitItem) -> Option<(syn::Ident, &Vec<Attribute>)> {
+        fn side(impl_item: &syn::TraitItem) -> Option<SideItem<'_>> {
             let (id, attrs) = match impl_item {
                 syn::TraitItem::Fn(x) => (&x.sig.ident, &x.attrs),
                 syn::TraitItem::Type(x) => (&x.ident, &x.attrs),
@@ -125,7 +125,7 @@ impl AbstItem {
                 _ => None?,
             };
 
-            Some((id.clone(), attrs))
+            Some(SideItem::new(id.to_string(), attrs))
         }
     }
 }

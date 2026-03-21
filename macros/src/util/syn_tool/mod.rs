@@ -4,10 +4,12 @@
 
 pub(crate) mod doc_attr;
 pub(crate) mod ns;
-pub(crate) use abst_item::*;
 pub(crate) use funcs::*;
+pub(crate) use root_item::*;
+pub(crate) use side_item::*;
 pub(crate) use skip_attr::*;
 
-mod abst_item;
 mod funcs;
+mod root_item;
+mod side_item;
 mod skip_attr;

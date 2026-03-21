@@ -62,7 +62,7 @@ impl DocShare {
 
     /// Validate inputs.
     pub fn validate(&self) -> Result<(), TokenStream> {
-        if !AbstItem::from_ref(&self.syn_item).is_documentable() {
+        if !RootItem::from_ref(&self.syn_item).is_documentable() {
             let item = SkipAttr::reparse(&self.syn_item);
             let err = Error::new_spanned(item, msg::UNEXPECTED_ITEM);
             let err = err.to_compile_error();
