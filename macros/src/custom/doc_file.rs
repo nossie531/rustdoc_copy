@@ -55,8 +55,8 @@ impl ToTokens for DocFile {
         };
 
         // Extract document chunk from fragment key.
-        let doc = &mut DocChunk::parse(md);
-        let chunk = &match doc.extract(md_path.key()) {
+        let chunk = &mut DocChunk::new(md);
+        let chunk = &match chunk.extract(md_path.key()) {
             Some(x) => x,
             None => {
                 let err_pos = self.md_path.to_token_stream();
@@ -66,8 +66,11 @@ impl ToTokens for DocFile {
             }
         };
 
+        // Wrap document chunk as document module.
+        let id = &self.mod_id;
+        let doc_mod = &DocFileMod::new(id, chunk);
+
         // Convert document chunk to tokens.
-        let chunk_tokens = chunk.print_in(&self.mod_id);
-        tokens.extend(chunk_tokens);
+        tokens.extend(print::print_doc_file_mod(doc_mod));
     }
 }

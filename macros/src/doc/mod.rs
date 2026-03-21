@@ -1,14 +1,12 @@
 //! Document system.
 
-pub(crate) mod print_item;
 pub(crate) use doc_chunk::*;
+pub(crate) use doc_chunk_mod::*;
+pub(crate) use doc_file_mod::*;
+pub(crate) use doc_item_mod::*;
 
-mod chunk_for_print;
 mod chunk_id;
 mod doc_chunk;
-mod parse_doc;
-mod print_doc;
-mod terms;
-use chunk_for_print::*;
-use parse_doc::*;
-use print_doc::*;
+mod doc_chunk_mod;
+mod doc_file_mod;
+mod doc_item_mod;

@@ -62,7 +62,7 @@ impl DocShare {
 
     /// Validate inputs.
     pub fn validate(&self) -> Result<(), TokenStream> {
-        if !RootItem::from_ref(&self.syn_item).is_documentable() {
+        if !BaseItem::from_ref(&self.syn_item).is_documentable() {
             let item = SkipAttr::reparse(&self.syn_item);
             let err = Error::new_spanned(item, msg::UNEXPECTED_ITEM);
             let err = err.to_compile_error();
@@ -86,8 +86,9 @@ impl Parse for DocShare {
 impl ToTokens for DocShare {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let mod_id = self.mod_id();
-        let syn_item = self.syn_item();
+        let syn_item = &self.syn_item();
+        let doc_item = &DocItemMod::new(mod_id, syn_item);
         tokens.extend(syn_item.into_token_stream());
-        tokens.extend(print_item::print_item(syn_item, mod_id));
+        tokens.extend(print::print_doc_item_mod(doc_item));
     }
 }

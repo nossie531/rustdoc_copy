@@ -6,6 +6,7 @@
 mod custom;
 mod doc;
 mod msg;
+mod print;
 mod util;
 use proc_macro as pm;
 use proc_macro2::TokenStream;

@@ -1,12 +1,9 @@
 //! Provider of [`DocChunk`].
 
-use crate::doc::terms::*;
 use crate::doc::*;
+use crate::util::md_tool::md_parse::*;
 use crate::util::md_tool::*;
-use crate::util::syn_tool::*;
 use crate::util::*;
-use crate::*;
-use proc_macro2::TokenStream;
 use pulldown_cmark::{CowStr, Event, LinkType, Tag};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
@@ -46,25 +43,12 @@ pub(crate) struct DocChunkBody<'a> {
 }
 
 impl<'a> DocChunk<'a> {
-    /// Creates a new instance by parsing Markdown.
-    pub fn parse(md: &'a str) -> Self {
-        doc::parse_doc(md)
-    }
-
-    /// Creates a new root.
-    pub fn new_root(defs: HashMap<String, String>) -> Self {
-        Self(Rc::new(RefCell::new(DocChunkBody {
-            defs: Rc::new(defs),
-            ..Default::default()
-        })))
-    }
-
-    /// Creates a new chunk.
-    pub fn new_chunk(level: u8) -> Self {
-        Self(Rc::new(RefCell::new(DocChunkBody {
-            level,
-            ..Default::default()
-        })))
+    /// Creates a new instance from Markdown.
+    pub fn new(md: &'a str) -> Self {
+        let parser = MdParser::parse(md);
+        let mut ret = Self::build_doc_tree(parser);
+        ret.assign_chunk_ids();
+        ret
     }
 
     /// Returns borrowed body.
@@ -75,79 +59,6 @@ impl<'a> DocChunk<'a> {
     /// Returns mutable borrowed body.
     pub fn borrow_mut(&self) -> RefMut<'_, DocChunkBody<'a>> {
         self.0.borrow_mut()
-    }
-
-    /// Returns tokens.
-    pub fn print(&self, path: &syn::Path) -> TokenStream {
-        doc::print_doc(&ChunkForPrint::new(self, path))
-    }
-
-    /// Returns tokens in given module.
-    pub fn print_in(&self, mod_id: &syn::Ident) -> TokenStream {
-        let mod_path = &ns::path([mod_id]);
-        let doc_tokens = &self.print(mod_path);
-        templates::module(mod_id, doc_tokens)
-    }
-
-    /// Returns the target where the given chunk should be added.
-    pub fn seek_parent(&self, child: &DocChunk) -> Self {
-        let mut curr = self.clone();
-
-        while curr.borrow().level() >= child.borrow().level() {
-            let curr_ref = curr.borrow();
-            let parent = curr_ref.parent.as_ref().cloned();
-            let Some(parent) = parent else { break };
-            drop(curr_ref);
-            curr = DocChunk(parent.upgrade().unwrap());
-        }
-
-        curr
-    }
-
-    /// Appends block.
-    pub fn append_block(&mut self, block: Vec<Event<'a>>) {
-        let this = &mut self.borrow_mut();
-        if this.head_events.is_empty() {
-            this.head_events = block;
-        } else {
-            this.body_events.extend(block);
-        }
-    }
-
-    /// Appends child chunk.
-    pub fn append_chunk(&mut self, child: DocChunk<'a>) -> Self {
-        let this = &mut self.borrow_mut();
-        this.chunks.push(child.clone());
-        child.borrow_mut().defs = this.defs.clone();
-        child.borrow_mut().parent = Some(Rc::downgrade(&self.0));
-        child
-    }
-
-    /// Assigns unique ID to each chunk.
-    pub fn assign_chunk_ids(&mut self) {
-        let md_ids = &mut HashSet::new();
-        let rs_ids = &mut HashSet::new();
-        traverse(self.clone(), md_ids, rs_ids);
-
-        // Traverse chunks.
-        fn traverse(chunk: DocChunk, md_ids: &mut HashSet<String>, rs_ids: &mut HashSet<String>) {
-            let this = &mut chunk.borrow_mut();
-
-            if !this.title().is_empty() {
-                let md_id = chunk_id::md_id(&this.title(), md_ids);
-                let rs_id = chunk_id::rs_id(&this.title(), rs_ids);
-                this.md_id = Some(md_id.clone());
-                this.rs_id = Some(rs_id.clone());
-                md_ids.insert(md_id);
-                rs_ids.insert(rs_id);
-            }
-
-            // Traverse child chunks.
-            let rs_ids = &mut HashSet::new();
-            for chunk in this.chunks.iter().cloned() {
-                traverse(chunk, md_ids, rs_ids);
-            }
-        }
     }
 
     /// Returns document chank matched given key.
@@ -205,6 +116,106 @@ impl<'a> DocChunk<'a> {
             let new_events = old_events.map(|x| md_tool::add_level(x, delta));
             let imports = new_events.collect::<Vec<_>>();
             chunk.head_events.extend(imports);
+        }
+    }
+
+    /// Creates a new empty root.
+    fn new_empty_root(defs: HashMap<String, String>) -> Self {
+        Self(Rc::new(RefCell::new(DocChunkBody {
+            defs: Rc::new(defs),
+            ..Default::default()
+        })))
+    }
+
+    /// Creates a new empty chunk.
+    fn new_empty_chunk(level: u8) -> Self {
+        Self(Rc::new(RefCell::new(DocChunkBody {
+            level,
+            ..Default::default()
+        })))
+    }
+
+    /// Build document tree from parser.
+    fn build_doc_tree(parser: MdParser) -> DocChunk {
+        let ret = DocChunk::new_empty_root(parser.defs);
+        let buf = &mut EventBuffer::new();
+        let mut curr = ret.clone();
+
+        for event in parser.events {
+            if let MdOutline::Heading(lv) = MdOutline::get(&event) {
+                let child = DocChunk::new_empty_chunk(lv);
+                let parent = &mut curr.seek_parent(&child);
+                curr = parent.append_chunk(child);
+            }
+
+            let Some(block) = buf.input(event) else {
+                continue;
+            };
+
+            curr.append_block(block);
+        }
+
+        ret
+    }
+
+    /// Returns the target where the given chunk should be added.
+    fn seek_parent(&self, child: &DocChunk) -> Self {
+        let mut curr = self.clone();
+
+        while curr.borrow().level() >= child.borrow().level() {
+            let curr_ref = curr.borrow();
+            let parent = curr_ref.parent.as_ref().cloned();
+            let Some(parent) = parent else { break };
+            drop(curr_ref);
+            curr = DocChunk(parent.upgrade().unwrap());
+        }
+
+        curr
+    }
+
+    /// Appends block.
+    fn append_block(&mut self, block: Vec<Event<'a>>) {
+        let this = &mut self.borrow_mut();
+        if this.head_events.is_empty() {
+            this.head_events = block;
+        } else {
+            this.body_events.extend(block);
+        }
+    }
+
+    /// Appends child chunk.
+    fn append_chunk(&mut self, child: DocChunk<'a>) -> Self {
+        let this = &mut self.borrow_mut();
+        this.chunks.push(child.clone());
+        child.borrow_mut().defs = this.defs.clone();
+        child.borrow_mut().parent = Some(Rc::downgrade(&self.0));
+        child
+    }
+
+    /// Assigns unique ID to each chunk.
+    fn assign_chunk_ids(&mut self) {
+        let md_ids = &mut HashSet::new();
+        let rs_ids = &mut HashSet::new();
+        traverse(self.clone(), md_ids, rs_ids);
+
+        // Traverse chunks.
+        fn traverse(chunk: DocChunk, md_ids: &mut HashSet<String>, rs_ids: &mut HashSet<String>) {
+            let this = &mut chunk.borrow_mut();
+
+            if !this.title().is_empty() {
+                let md_id = chunk_id::md_id(&this.title(), md_ids);
+                let rs_id = chunk_id::rs_id(&this.title(), rs_ids);
+                this.md_id = Some(md_id.clone());
+                this.rs_id = Some(rs_id.clone());
+                md_ids.insert(md_id);
+                rs_ids.insert(rs_id);
+            }
+
+            // Traverse child chunks.
+            let rs_ids = &mut HashSet::new();
+            for chunk in this.chunks.iter().cloned() {
+                traverse(chunk, md_ids, rs_ids);
+            }
         }
     }
 }

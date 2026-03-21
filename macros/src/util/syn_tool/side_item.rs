@@ -11,10 +11,7 @@ pub(crate) struct SideItem<'a> {
 impl<'a> SideItem<'a> {
     /// Creates a new instance.
     pub fn new(id: String, attrs: &'a Vec<Attribute>) -> Self {
-        Self {
-            id,
-            attrs,
-        }
+        Self { id, attrs }
     }
 
     /// Returns ID.
@@ -24,6 +21,6 @@ impl<'a> SideItem<'a> {
 
     /// Returns attributes.
     pub fn attrs(&self) -> &Vec<Attribute> {
-        &self.attrs
+        self.attrs
     }
 }
