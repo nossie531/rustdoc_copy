@@ -2,7 +2,7 @@
 
 use crate::doc::*;
 
-/// Document chunk module.
+/// Module parts for [`DocChunk`].
 pub(crate) struct DocChunkMod<'a, 'd> {
     /// Document module path.
     mod_path: &'a syn::Path,

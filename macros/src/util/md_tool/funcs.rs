@@ -1,8 +1,7 @@
 //! Utility functions for Markdown.
 
 use crate::util::md_tool::md_print::*;
-use crate::util::md_tool::*;
-use pulldown_cmark::{Event, HeadingLevel, LinkType, Tag, TagEnd};
+use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
 
 /// Returns plain text of Markdown events.
 pub(crate) fn text<'a>(events: impl Iterator<Item = Event<'a>>) -> String {
@@ -44,31 +43,5 @@ pub(crate) fn add_level<'a>(event: Event<'a>, delta: i8) -> Event<'a> {
 
     fn new_end_heading(level: HeadingLevel) -> TagEnd {
         TagEnd::Heading(level)
-    }
-}
-
-/// Retruns event with embeding definitions style.
-pub(crate) fn embed_url<'a>(event: &Event<'a>) -> Event<'a> {
-    return match event {
-        Event::Start(Tag::Link { .. }) => {
-            let url_event = &mut UrlEvent::try_new(event).unwrap();
-            url_event.link_type = to_embeding_type(&url_event.link_type);
-            url_event.to_link()
-        }
-        Event::Start(Tag::Image { .. }) => {
-            let url_event = &mut UrlEvent::try_new(event).unwrap();
-            url_event.link_type = to_embeding_type(&url_event.link_type);
-            url_event.to_image()
-        }
-        _ => event.clone(),
-    };
-
-    fn to_embeding_type(link_type: &LinkType) -> LinkType {
-        match link_type {
-            LinkType::Reference => LinkType::Inline,
-            LinkType::Collapsed => LinkType::Inline,
-            LinkType::Shortcut => LinkType::Inline,
-            _ => *link_type,
-        }
     }
 }

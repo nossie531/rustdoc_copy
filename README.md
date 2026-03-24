@@ -14,20 +14,25 @@ _Forgive me if the document is hard to read._
 
 😊 Pros
 
-- Partial copy is supported with various methods.
-- Partial copy can work with references and definitions.
+- [Document path][p1] supports partial copy in various methods.
+- [Link adjustments][p2] prevents broken links in various situations.
 - [`doc_file`] supports heading level adjusting.
 - [`doc_file`] supports link copy guard (for `docs.rs` URL in `README.md`).
+
+[p1]: #document-path
+[p2]: #link-adjustments
 
 🤔 Cons
 
 - [No root document sharing][c1] (expecting futrue Rust).
 - [No file update detecting][c2] (expecting futrue Rust).
 - [Miss copy of document][c3] (expecting futrue crates for Markdown).
+- [Mysterious compilation troubles][c4] (maybe not a big deal).
 
 [c1]: #no-root-document-shareing
 [c2]: #no-file-update-detecting
 [c3]: #miss-copy-of-document
+[c4]: #mysterious-compilation-troubles
 
 ## Examples
 
@@ -145,13 +150,20 @@ assert_eq!(some_func(), 42);
 
 ### Document path
 
-Document components is specified by path with following components.
+Partial document is specified by path with following components.
 
 1. Root module
 
    From first argument of [`doc_share`] and [`doc_file`].
 
-2. Item module
+2. Fragment key
+
+   Second argument of [`doc_file`] can include fragment key after file path.
+
+   See "[Fragment key][doc_file#fragment-key]" section in [`doc_file`]
+   for more details.
+
+3. Item module
 
    | ID                                   | Description        |
    | --                                   | --                 |
@@ -159,14 +171,14 @@ Document components is specified by path with following components.
    | <code>base</code>                    | Base item          |
    | <code>side::<var>member</var></code> | Member item        |
 
-3. Section module (recursive)
+4. Section module (recursive)
 
    | ID                                   | Description   |
    | --                                   | --            |
    | <em>No selection</em>                | Root section  |
    | <code>sub::<var>section</var></code> | Named section |
 
-4. Parts macro
+5. Parts macro
 
    | ID      | Description                                   |
    | --      | --                                            |
@@ -177,7 +189,7 @@ Document components is specified by path with following components.
    | `top!`  | `head!` + `body!`                             |
    | `all!`  | `top!` + `subs!` + `defs!`                    |
 
-### ID from title
+### Title ID
 
 Section identification by title has two subtly different styles.
 
@@ -201,11 +213,29 @@ Section identification by title has two subtly different styles.
   - Sequential numbers are used if same title exists in sibling sections.
   - Long ID or path can shorten with `use` and `as` keywords.
 
-### References and definitions
+### Link adjustments
 
-Up for partial copy, all links and images definitions are embeded to references.
+To prevent broken links, folowing links are adjusted automatically.
 
-About footnotes, use `defs!` macro. Because they lack embeding ability.
+- links with reference and definition
+
+  Up for partial copy, reference style link is converted to inline style.
+
+- links with `Self` keyword
+
+  `Self` in Rust path is converted to actual item ID.
+
+  This almost works fine about links like ``[`method`](Self::method)``.
+  But pay attention about links like ``[`Self::method`]`` (Because
+  conversion target is URL only, and does not includes label).
+
+In contrast, following links are not adjusted.
+
+- Footnotes
+
+  Because they lack embeding ability. Use `defs!` macro.
+
+## Trouble shooting
 
 ### No root document shareing
 
@@ -231,55 +261,12 @@ of the crate for CommonMark that this crate depends on. The crate is high
 precision, but currently, not perfect. Therefore, when using elaborate
 notation, please inspect the outputs by yourself.
 
-### Common compile error
+### Mysterious compilation troubles
 
-The path of root module for documentation must be accessible without
-preceding paths. In other words, if that identifier is in another module,
-`use` keyword is required.
+Following compilation troubles maybe a bit tough.
 
--&nbsp;Compilation successed
-
-```rust
-pub mod my_mod {
-    use rustdoc_copy::prelude::*;
-
-    /// This is my function.
-    #[doc_share(doc)]
-    pub fn my_func() {
-        println!("`my_func` is called.");
-    }
-}
-
-use rustdoc_copy::prelude::*;
-use my_mod::doc;
-
-#[doc = doc::all!()]
-pub fn my_func_alias() {
-    my_mod::my_func();
-}
-```
-
--&nbsp;Compilation failed!
-
-```rust, compile_fail
-pub mod my_mod {
-    use rustdoc_copy::prelude::*;
-
-    /// This is my function.
-    #[doc_share(doc)] // <---- ❌ Error detected.
-    pub fn my_func() {
-        println!("`my_func` is called.");
-    }
-}
-
-use rustdoc_copy::prelude::*;
-// use my_mod::doc; // <---- 🚧 Shorthand path is not used.
-
-#[doc = my_mod::doc::all!()] // <---- 👈 Full path is used.
-pub fn my_func_alias() {
-    my_mod::my_func();
-}
-```
+- [Normal path error][docs::normal_path_error]
+- [Self path warning][docs::self_path_warning]
 
 ## History
 
@@ -290,3 +277,6 @@ See [CHANGELOG](CHANGELOG.md).
 [!copy_guard]: https://docs.rs/rustdoc_copy/0.1.0/
 [`doc_share`]: https://docs.rs/rustdoc_copy/0.1.0/rustdoc_copy/attr.doc_share.html
 [`doc_file`]: https://docs.rs/rustdoc_copy/0.1.0/rustdoc_copy/macro.doc_file.html
+[docs::normal_path_error]: https://docs.rs/rustdoc_copy/0.1.0/rustdoc_copy/docs/normal_path_error/index.html
+[docs::self_path_warning]: https://docs.rs/rustdoc_copy/0.1.0/rustdoc_copy/docs/self_path_error/index.html
+[doc_file#fragment-key]: https://docs.rs/rustdoc_copy/0.1.0/rustdoc_copy/macro.doc_file.html#fragment-key

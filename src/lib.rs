@@ -6,6 +6,7 @@
 #![doc = doc::sub::core_items::all!()]
 #![doc = doc::sub::examples::all!()]
 #![doc = doc::sub::tips::all!()]
+#![doc = doc::sub::trouble_shooting::all!()]
 #![warn(missing_docs)]
 #![cfg_attr(not(test), no_std)]
 
@@ -18,3 +19,6 @@ mod macros;
 #[doc(hidden)]
 #[path = "../tests_compile_fail/mod.rs"]
 mod tests_compile_fail;
+
+#[cfg(doc)]
+pub mod docs;

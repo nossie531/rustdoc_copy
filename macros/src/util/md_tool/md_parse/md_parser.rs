@@ -1,9 +1,11 @@
+//! Provider of [`MdParser`].
+
 use crate::util::md_tool::md_parse::*;
 use pulldown_cmark::{Options, Parser, RefDefs};
 use std::collections::HashMap;
 
 /// Base Markdown parser.
-type BaseParser<'a> = Parser<'a, MyBlcb>;
+type BaseParser<'a> = Parser<'a, BrokenLinkSolver>;
 
 /// Markdown parser.
 pub(crate) struct MdParser<'a> {
@@ -17,7 +19,7 @@ impl<'a> MdParser<'a> {
     /// Parse text.
     pub fn parse(text: &'a str) -> Self {
         let options = Self::options();
-        let callback = Some(MyBlcb());
+        let callback = Some(BrokenLinkSolver());
         let events = Parser::new_with_broken_link_callback(text, options, callback);
         let defs = Self::to_hash_map(events.reference_definitions());
         Self { events, defs }

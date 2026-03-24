@@ -55,7 +55,7 @@ impl ToTokens for DocFile {
         };
 
         // Extract document chunk from fragment key.
-        let chunk = &mut DocChunk::new(md);
+        let chunk = &mut parse::parse_doc(md);
         let chunk = &match chunk.extract(md_path.key()) {
             Some(x) => x,
             None => {

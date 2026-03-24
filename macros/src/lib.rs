@@ -1,11 +1,12 @@
 //! Procedual macros for crate `rustdoc_copy`.
 //!
-//! *The author of this crate is not good at English.*
-//! *Forgive me if the document is hard to read.*
+//! _The author of this crate is not good at English._  
+//! _Forgive me if the document is hard to read._
 
 mod custom;
 mod doc;
 mod msg;
+mod parse;
 mod print;
 mod util;
 use proc_macro as pm;

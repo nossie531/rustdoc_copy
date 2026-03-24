@@ -1,11 +1,13 @@
+use std::marker::PhantomData;
+
 use rustdoc_copy::prelude::*;
 
 #[test]
 fn test_const() {
     let asis = doc::all!();
-    assert_eq!(asis.trim(), "Target document.");
+    assert_eq!(asis.trim(), "Document of [`Self`](TARGET_ITEM).");
 
-    /// Target document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     #[allow(unused)]
     const TARGET_ITEM: i32 = 42;
@@ -14,9 +16,9 @@ fn test_const() {
 #[test]
 fn test_fn() {
     let asis = doc::all!();
-    assert_eq!(asis.trim(), "Target document.");
+    assert_eq!(asis.trim(), "Document of [`Self`](target_item).");
 
-    /// Target document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     #[allow(unused)]
     fn target_item() {}
@@ -25,9 +27,9 @@ fn test_fn() {
 #[test]
 fn test_macro() {
     let asis = doc::all!();
-    assert_eq!(asis.trim(), "Target document.");
+    assert_eq!(asis.trim(), "Document of [`Self`](target_item).");
 
-    /// Target document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     #[allow(unused)]
     macro_rules! target_item {
@@ -38,9 +40,9 @@ fn test_macro() {
 #[test]
 fn test_mod() {
     let asis = doc::all!();
-    assert_eq!(asis.trim(), "Target document.");
+    assert_eq!(asis.trim(), "Document of [`Self`](target_item).");
 
-    /// Target document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     #[allow(unused)]
     mod target_item {}
@@ -49,9 +51,9 @@ fn test_mod() {
 #[test]
 fn test_static() {
     let asis = doc::all!();
-    assert_eq!(asis.trim(), "Target document.");
+    assert_eq!(asis.trim(), "Document of [`Self`](TARGET_ITEM).");
 
-    /// Target document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     #[allow(unused)]
     static TARGET_ITEM: i32 = 42;
@@ -60,9 +62,9 @@ fn test_static() {
 #[test]
 fn test_type() {
     let asis = doc::all!();
-    assert_eq!(asis.trim(), "Target document.");
+    assert_eq!(asis.trim(), "Document of [`Self`](TargetItem).");
 
-    /// Target document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     #[allow(unused)]
     type TargetItem = i32;
@@ -70,10 +72,11 @@ fn test_type() {
 
 #[test]
 fn test_enum() {
+    #[rustfmt::skip]
     let datas = [
-        (doc::base::all!(), "Base document."),
-        (doc::side::Variant1::all!(), "Variant 1."),
-        (doc::side::Variant2::all!(), "Variant 2."),
+        (doc::base::all!(), "Document of [`Self`](TargetItem)."),
+        (doc::side::Variant1::all!(), "1st item of [`Self`](TargetItem)."),
+        (doc::side::Variant2::all!(), "2nd item of [`Self`](TargetItem)."),
     ];
 
     for (text, tobe) in datas {
@@ -81,23 +84,24 @@ fn test_enum() {
         assert_eq!(asis, tobe);
     }
 
-    /// Base document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     #[allow(unused)]
     enum TargetItem {
-        /// Variant 1.
+        /// 1st item of [`Self`].
         Variant1,
-        /// Variant 2.
+        /// 2nd item of [`Self`].
         Variant2,
     }
 }
 
 #[test]
 fn test_impl_inherent() {
+    #[rustfmt::skip]
     let datas = [
-        (doc::base::all!(), "Base document."),
-        (doc::side::CONST::all!(), "Some const."),
-        (doc::side::method::all!(), "Some method."),
+        (doc::base::all!(), "Document of [`Self`](SomeType)."),
+        (doc::side::CONST::all!(), "1st item of [`Self`](SomeType)."),
+        (doc::side::method::all!(), "2nd item of [`Self`](SomeType)."),
     ];
 
     for (text, tobe) in datas {
@@ -108,23 +112,24 @@ fn test_impl_inherent() {
     #[allow(unused)]
     struct SomeType();
 
-    /// Base document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     #[allow(unused)]
     impl SomeType {
-        /// Some const.
+        /// 1st item of [`Self`].
         const CONST: i32 = 42;
-        /// Some method.
+        /// 2nd item of [`Self`].
         fn method() {}
     }
 }
 
 #[test]
 fn test_impl_trait() {
+    #[rustfmt::skip]
     let datas = [
-        (doc::base::all!(), "Base document."),
-        (doc::side::Type::all!(), "Some type."),
-        (doc::side::method::all!(), "Some method."),
+        (doc::base::all!(), "Document of [`Self`](SomeType)."),
+        (doc::side::Type::all!(), "1st item of [`Self`](SomeType)."),
+        (doc::side::method::all!(), "2nd item of [`Self`](SomeType)."),
     ];
 
     for (text, tobe) in datas {
@@ -141,22 +146,23 @@ fn test_impl_trait() {
         fn method();
     }
 
-    /// Base document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     impl SomeTrait for SomeType {
-        /// Some type.
+        /// 1st item of [`Self`].
         type Type = i32;
-        /// Some method.
+        /// 2nd item of [`Self`].
         fn method() {}
     }
 }
 
 #[test]
 fn test_struct_normal() {
+    #[rustfmt::skip]
     let datas = [
-        (doc::base::all!(), "Base document."),
-        (doc::side::field1::all!(), "Field 1."),
-        (doc::side::field2::all!(), "Field 2."),
+        (doc::base::all!(), "Document of [`Self`](TargetItem)."),
+        (doc::side::field1::all!(), "1st item of [`Self`](TargetItem)."),
+        (doc::side::field2::all!(), "2nd item of [`Self`](TargetItem)."),
     ];
 
     for (text, tobe) in datas {
@@ -164,23 +170,24 @@ fn test_struct_normal() {
         assert_eq!(asis, tobe);
     }
 
-    /// Base document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     #[allow(unused)]
     struct TargetItem {
-        /// Field 1.
+        /// 1st item of [`Self`].
         pub field1: i32,
-        /// Field 2.
+        /// 2nd item of [`Self`].
         pub field2: i32,
     }
 }
 
 #[test]
 fn test_struct_tuple() {
+    #[rustfmt::skip]
     let datas = [
-        (doc::base::all!(), "Base document."),
-        (doc::side::v0::all!(), "First value."),
-        (doc::side::v1::all!(), "Second value."),
+        (doc::base::all!(), "Document of [`Self`](TargetItem)."),
+        (doc::side::v0::all!(), "1st item of [`Self`](TargetItem)."),
+        (doc::side::v1::all!(), "2nd item of [`Self`](TargetItem)."),
     ];
 
     for (text, tobe) in datas {
@@ -188,24 +195,25 @@ fn test_struct_tuple() {
         assert_eq!(asis, tobe);
     }
 
-    /// Base document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     #[allow(unused)]
     struct TargetItem(
-        /// First value.
+        /// 1st item of [`Self`].
         pub i32,
-        /// Second value.
+        /// 2nd item of [`Self`].
         pub i32,
     );
 }
 
 #[test]
 fn test_trait() {
-    let datas = [
-        (doc::base::all!(), "Base document."),
-        (doc::side::CONST::all!(), "Some const."),
-        (doc::side::Type::all!(), "Some type."),
-        (doc::side::method::all!(), "Some method."),
+    #[rustfmt::skip]
+   let datas = [
+        (doc::base::all!(), "Document of [`Self`](TargetItem)."),
+        (doc::side::CONST::all!(), "1st item of [`Self`](TargetItem)."),
+        (doc::side::Type::all!(), "2nd item of [`Self`](TargetItem)."),
+        (doc::side::method::all!(), "3rd item of [`Self`](TargetItem)."),
     ];
 
     for (text, tobe) in datas {
@@ -213,15 +221,114 @@ fn test_trait() {
         assert_eq!(asis, tobe);
     }
 
-    /// Base document.
+    /// Document of [`Self`].
     #[doc_share(doc)]
     #[allow(unused)]
     trait TargetItem {
-        /// Some const.
+        /// 1st item of [`Self`].
         const CONST: i32;
-        /// Some type.
+        /// 2nd item of [`Self`].
         type Type;
-        /// Some method.
+        /// 3rd item of [`Self`].
         fn method();
     }
+}
+
+#[test]
+fn test_various_self() {
+    #[rustfmt::skip]
+    let datas = [
+        (tgt1::top!(), "Document of [Self](target1)."),
+        (tgt2::top!(), "Document of [`Self`](target2)."),
+        (tgt3::top!(), "Document of [`Self`](target3)."),
+        (tgt4::top!(), "Document of [some function](target4)."),
+        (tgt5::top!(), "Document of [some function](target5)."),
+        (tgt6::base::top!(), "Document of [`Self::item`](Target6::item)."),
+        (tgt7::base::top!(), "Document of [`Self<T>`](Target7<T>)."),
+        (tgt8::base::top!(), "Document of [`Self`](array)."),
+        (tgt9::base::top!(), "Document of [`Self`](fn)."),
+        (tgt10::base::top!(), "Document of [`Self`](pointer)."),
+        (tgt11::base::top!(), "Document of [`Self`](reference)."),
+        (tgt12::base::top!(), "Document of [`Self`](slice)."),
+        (tgt13::base::top!(), "Document of [`Self`](tuple)."),
+    ];
+
+    for (text, tobe) in datas {
+        let asis = text.trim();
+        assert_eq!(asis, tobe);
+    }
+
+    /// Document of [Self].
+    #[doc_share(tgt1)]
+    #[allow(unused)]
+    fn target1() {}
+
+    /// Document of [`Self`].
+    #[doc_share(tgt2)]
+    #[allow(unused)]
+    fn target2() {}
+
+    /// Document of [`Self`][].
+    #[doc_share(tgt3)]
+    #[allow(unused)]
+    fn target3() {}
+
+    /// Document of [some function](Self).
+    #[doc_share(tgt4)]
+    #[allow(unused)]
+    fn target4() {}
+
+    /// Document of [some function][link].
+    ///
+    /// [link]: Self
+    #[doc_share(tgt5)]
+    #[allow(unused)]
+    fn target5() {}
+
+    /// Document of [`Self::item`].
+    #[doc_share(tgt6)]
+    #[allow(unused)]
+    struct Target6 {
+        item: i32,
+    }
+
+    /// Document of [`Self<T>`].
+    #[doc_share(tgt7)]
+    #[allow(unused)]
+    struct Target7<T> {
+        pd: PhantomData<T>,
+    }
+
+    /// Document of [`Self`].
+    #[doc_share(tgt8)]
+    #[allow(unused)]
+    impl SomeTrait for [i32; 3] {}
+
+    /// Document of [`Self`].
+    #[doc_share(tgt9)]
+    #[allow(unused)]
+    impl SomeTrait for fn() -> () {}
+
+    /// Document of [`Self`].
+    #[doc_share(tgt10)]
+    #[allow(unused)]
+    impl SomeTrait for *const i32 {}
+
+    /// Document of [`Self`].
+    #[doc_share(tgt11)]
+    #[allow(unused)]
+    impl SomeTrait for &i32 {}
+
+    /// Document of [`Self`].
+    #[doc_share(tgt12)]
+    #[allow(unused)]
+    impl SomeTrait for [i32] {}
+
+    /// Document of [`Self`].
+    #[doc_share(tgt13)]
+    #[allow(unused)]
+    impl SomeTrait for (i32, i32) {}
+
+    #[allow(unused)]
+    trait SomeTrait {}
 }

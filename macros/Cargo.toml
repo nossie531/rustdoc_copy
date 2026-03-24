@@ -15,5 +15,6 @@ pulldown-cmark = { version = "0.13.0", default-features = false }
 pulldown-cmark-to-cmark = "22"
 proc-macro2 = "1"
 quote = "1"
+rustc_lexer = "0.1"
 syn = { version = "2", features = ["full"] }
 unicode-ident = "1"

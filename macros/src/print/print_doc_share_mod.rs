@@ -1,14 +1,14 @@
-//! Tools for parsing item document.
+//! Provider of [`print_doc_share_mod`].
 
 use crate::doc::*;
 use crate::print::terms::*;
 use crate::util::syn_tool::*;
 use crate::*;
 
-/// Returns document item tokens.
-pub(crate) fn print_doc_item_mod(doc_item_mod: &DocItemMod) -> TokenStream {
+/// Returns tokens of given [`DocShareMod`].
+pub(crate) fn print_doc_share_mod(doc_item_mod: &DocShareMod) -> TokenStream {
     let mod_id = doc_item_mod.mod_id();
-    let base_item = doc_item_mod.item();
+    let base_item = doc_item_mod.item().as_ref() as &BaseItem;
     print_doc_item(mod_id, base_item)
 }
 
@@ -27,7 +27,7 @@ fn print_doc_item(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
 fn print_simple_doc_item(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
     let md = &doc_attr::read(item.attrs());
     let path = &ns::path([mod_id]);
-    let chunk = &DocChunk::new(md);
+    let chunk = &parse::parse_doc(md).with_self_item(item.self_item());
     let chunk_mod = &DocChunkMod::new_root(path, chunk);
     print::print_doc_chunk_mod(chunk_mod)
 }
@@ -48,7 +48,7 @@ fn print_complex_doc_item(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
 fn print_base(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
     let md = &doc_attr::read(item.attrs());
     let path = &paths::base(mod_id);
-    let chunk = &DocChunk::new(md);
+    let chunk = &parse::parse_doc(md).with_self_item(item.self_item());
     let chunk_mod = &DocChunkMod::new_root(path, chunk);
     print::print_doc_chunk_mod(chunk_mod)
 }
@@ -61,7 +61,7 @@ fn print_side(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
         let md = &doc_attr::read(side.attrs());
         let id = &ns::id(side.id());
         let path = &paths::side_item(mod_id, id);
-        let chunk = &DocChunk::new(md);
+        let chunk = &parse::parse_doc(md).with_self_item(item.self_item());
         let chunk_mod = &DocChunkMod::new_root(path, chunk);
         contents.extend(print::print_doc_chunk_mod(chunk_mod));
     }

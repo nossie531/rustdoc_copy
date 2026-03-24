@@ -1,3 +1,5 @@
+//! Provider of [`SideItem`].
+
 use syn::Attribute;
 
 /// Side item.

@@ -1,12 +1,10 @@
 //! Provider of [`DocChunk`].
 
-use crate::doc::*;
-use crate::util::md_tool::md_parse::*;
 use crate::util::md_tool::*;
 use crate::util::*;
-use pulldown_cmark::{CowStr, Event, LinkType, Tag};
+use pulldown_cmark::Event;
 use std::cell::{Ref, RefCell, RefMut};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
 /// Copy guard definition key.
@@ -18,11 +16,11 @@ const COPY_GUARD: &str = "!copy_guard";
 ///
 /// - Root of document
 /// - Section of document
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub(crate) struct DocChunk<'a>(Rc<RefCell<DocChunkBody<'a>>>);
 
 /// Body of [`DocChunk`].
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub(crate) struct DocChunkBody<'a> {
     /// Heading level.
     level: u8,
@@ -30,6 +28,8 @@ pub(crate) struct DocChunkBody<'a> {
     md_id: Option<String>,
     /// Rust ID of this chunk.
     rs_id: Option<String>,
+    /// Actual target of `Self`.
+    self_item: Option<&'a syn::Item>,
     /// Events of head.
     head_events: Vec<Event<'a>>,
     /// Events of body.
@@ -43,12 +43,26 @@ pub(crate) struct DocChunkBody<'a> {
 }
 
 impl<'a> DocChunk<'a> {
-    /// Creates a new instance from Markdown.
-    pub fn new(md: &'a str) -> Self {
-        let parser = MdParser::parse(md);
-        let mut ret = Self::build_doc_tree(parser);
-        ret.assign_chunk_ids();
-        ret
+    /// Creates a new empty root.
+    pub(crate) fn new_empty_root(defs: HashMap<String, String>) -> Self {
+        Self(Rc::new(RefCell::new(DocChunkBody {
+            defs: Rc::new(defs),
+            ..Default::default()
+        })))
+    }
+
+    /// Creates a new empty chunk.
+    pub(crate) fn new_empty_chunk(level: u8) -> Self {
+        Self(Rc::new(RefCell::new(DocChunkBody {
+            level,
+            ..Default::default()
+        })))
+    }
+
+    /// Creates a new instance with given self item.
+    pub fn with_self_item(self, value: &'a syn::Item) -> Self {
+        self.0.borrow_mut().self_item = Some(value);
+        self
     }
 
     /// Returns borrowed body.
@@ -59,6 +73,36 @@ impl<'a> DocChunk<'a> {
     /// Returns mutable borrowed body.
     pub fn borrow_mut(&self) -> RefMut<'_, DocChunkBody<'a>> {
         self.0.borrow_mut()
+    }
+
+    /// Returns parent chunk.
+    pub fn parent(&self) -> Option<DocChunk<'a>> {
+        self.borrow()
+            .parent
+            .as_ref()
+            .map(|x| DocChunk(x.upgrade().unwrap()))
+    }
+
+    /// Appends block.
+    pub fn append_block(&mut self, block: Vec<Event<'a>>) {
+        let this = &mut self.borrow_mut();
+        if this.head_events.is_empty() {
+            this.head_events = block;
+        } else {
+            this.body_events.extend(block);
+        }
+    }
+
+    /// Appends child chunk.
+    pub fn append_chunk(&mut self, child: DocChunk<'a>) -> Self {
+        let this = &mut self.borrow_mut();
+        let child_clone = child.clone();
+        let child_edit = &mut child.borrow_mut();
+        child_edit.self_item = this.self_item;
+        child_edit.defs = this.defs.clone();
+        child_edit.parent = Some(Rc::downgrade(&self.0));
+        this.chunks.push(child_clone);
+        this.chunks.last().unwrap().clone()
     }
 
     /// Returns document chank matched given key.
@@ -81,7 +125,7 @@ impl<'a> DocChunk<'a> {
         fn is_hit(chunk: &DocChunk, key: Option<&str>) -> bool {
             let Some(key) = key else { return true };
             let root_hit = chunk.borrow().level() == 1 && key == MdPath::ANONYMOUS_ROOT;
-            let normal_hit = chunk.borrow().md_id.as_deref() == Some(key);
+            let normal_hit = chunk.borrow().md_id() == Some(key);
             root_hit || normal_hit
         }
 
@@ -118,106 +162,6 @@ impl<'a> DocChunk<'a> {
             chunk.head_events.extend(imports);
         }
     }
-
-    /// Creates a new empty root.
-    fn new_empty_root(defs: HashMap<String, String>) -> Self {
-        Self(Rc::new(RefCell::new(DocChunkBody {
-            defs: Rc::new(defs),
-            ..Default::default()
-        })))
-    }
-
-    /// Creates a new empty chunk.
-    fn new_empty_chunk(level: u8) -> Self {
-        Self(Rc::new(RefCell::new(DocChunkBody {
-            level,
-            ..Default::default()
-        })))
-    }
-
-    /// Build document tree from parser.
-    fn build_doc_tree(parser: MdParser) -> DocChunk {
-        let ret = DocChunk::new_empty_root(parser.defs);
-        let buf = &mut EventBuffer::new();
-        let mut curr = ret.clone();
-
-        for event in parser.events {
-            if let MdOutline::Heading(lv) = MdOutline::get(&event) {
-                let child = DocChunk::new_empty_chunk(lv);
-                let parent = &mut curr.seek_parent(&child);
-                curr = parent.append_chunk(child);
-            }
-
-            let Some(block) = buf.input(event) else {
-                continue;
-            };
-
-            curr.append_block(block);
-        }
-
-        ret
-    }
-
-    /// Returns the target where the given chunk should be added.
-    fn seek_parent(&self, child: &DocChunk) -> Self {
-        let mut curr = self.clone();
-
-        while curr.borrow().level() >= child.borrow().level() {
-            let curr_ref = curr.borrow();
-            let parent = curr_ref.parent.as_ref().cloned();
-            let Some(parent) = parent else { break };
-            drop(curr_ref);
-            curr = DocChunk(parent.upgrade().unwrap());
-        }
-
-        curr
-    }
-
-    /// Appends block.
-    fn append_block(&mut self, block: Vec<Event<'a>>) {
-        let this = &mut self.borrow_mut();
-        if this.head_events.is_empty() {
-            this.head_events = block;
-        } else {
-            this.body_events.extend(block);
-        }
-    }
-
-    /// Appends child chunk.
-    fn append_chunk(&mut self, child: DocChunk<'a>) -> Self {
-        let this = &mut self.borrow_mut();
-        this.chunks.push(child.clone());
-        child.borrow_mut().defs = this.defs.clone();
-        child.borrow_mut().parent = Some(Rc::downgrade(&self.0));
-        child
-    }
-
-    /// Assigns unique ID to each chunk.
-    fn assign_chunk_ids(&mut self) {
-        let md_ids = &mut HashSet::new();
-        let rs_ids = &mut HashSet::new();
-        traverse(self.clone(), md_ids, rs_ids);
-
-        // Traverse chunks.
-        fn traverse(chunk: DocChunk, md_ids: &mut HashSet<String>, rs_ids: &mut HashSet<String>) {
-            let this = &mut chunk.borrow_mut();
-
-            if !this.title().is_empty() {
-                let md_id = chunk_id::md_id(&this.title(), md_ids);
-                let rs_id = chunk_id::rs_id(&this.title(), rs_ids);
-                this.md_id = Some(md_id.clone());
-                this.rs_id = Some(rs_id.clone());
-                md_ids.insert(md_id);
-                rs_ids.insert(rs_id);
-            }
-
-            // Traverse child chunks.
-            let rs_ids = &mut HashSet::new();
-            for chunk in this.chunks.iter().cloned() {
-                traverse(chunk, md_ids, rs_ids);
-            }
-        }
-    }
 }
 
 impl<'a> DocChunkBody<'a> {
@@ -231,24 +175,34 @@ impl<'a> DocChunkBody<'a> {
         self.level
     }
 
+    /// Returns Markdown Fragment ID of this chunk.
+    pub fn md_id(&self) -> Option<&str> {
+        self.md_id.as_deref()
+    }
+
     /// Returns Rust ID of this chunk.
-    pub fn rust_id(&self) -> Option<&str> {
+    pub fn rs_id(&self) -> Option<&str> {
         self.rs_id.as_deref()
+    }
+
+    /// Returns Actual target of `Self`.
+    pub fn self_item(&self) -> Option<&'a syn::Item> {
+        self.self_item
     }
 
     /// Returns title.
     pub fn title(&self) -> String {
-        md_tool::text(&mut self.head_events())
+        md_tool::text(self.head_events.iter().cloned())
     }
 
     /// Returns events of heading.
     pub fn head_events(&self) -> impl Iterator<Item = Event<'a>> {
-        self.head_events.iter().map(|x| self.adjust_url_event(x))
+        self.head_events.iter().cloned()
     }
 
     /// Returns events of body.
     pub fn body_events(&self) -> impl Iterator<Item = Event<'a>> {
-        self.body_events.iter().map(|x| self.adjust_url_event(x))
+        self.body_events.iter().cloned()
     }
 
     /// Returns copy guard URL root.
@@ -261,7 +215,7 @@ impl<'a> DocChunkBody<'a> {
         self.defs
             .iter()
             .map(|(k, v)| (k.as_str(), v.as_str()))
-            .filter(move |(_, url)| !self.guards_url(url))
+            .filter(move |(_, url)| !self.is_guarding(url))
     }
 
     /// Returns chunks.
@@ -270,37 +224,17 @@ impl<'a> DocChunkBody<'a> {
     }
 
     /// Returns `true` if given URL is guarded.
-    pub fn guards_url(&self, url: &str) -> bool {
+    pub fn is_guarding(&self, url: &str) -> bool {
         self.copy_guard().is_some_and(|x| url.starts_with(x))
     }
 
-    /// Adjust URL event.
-    fn adjust_url_event<'x>(&self, event: &Event<'x>) -> Event<'x> {
-        let event = &self.adjust_url_event_by_copy_guard(event);
-        md_tool::embed_url(event)
+    /// Sets Markdown Fragment ID of this chunk.
+    pub fn set_md_id(&mut self, value: String) {
+        self.md_id = Some(value);
     }
 
-    /// Adjust URL event by copy guard.    
-    fn adjust_url_event_by_copy_guard<'x>(&self, event: &Event<'x>) -> Event<'x> {
-        let Some(url_event) = UrlEvent::try_new_link(event) else {
-            return event.clone();
-        };
-
-        if !self.guards_url(&url_event.dest_url) {
-            return event.clone();
-        }
-
-        Event::Start(Tag::Link {
-            dest_url: CowStr::Borrowed(""),
-            title: url_event.title.clone(),
-            id: url_event.id.clone(),
-            link_type: match url_event.link_type {
-                LinkType::Reference => LinkType::ReferenceUnknown,
-                LinkType::Collapsed => LinkType::CollapsedUnknown,
-                LinkType::Shortcut => LinkType::ShortcutUnknown,
-                LinkType::Inline => LinkType::ShortcutUnknown,
-                _ => return event.clone(),
-            },
-        })
+    /// Sets Rust ID of this chunk.
+    pub fn set_rs_id(&mut self, value: String) {
+        self.rs_id = Some(value);
     }
 }

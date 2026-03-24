@@ -11,8 +11,10 @@ use std::mem;
 /// And then split them to block level.
 #[derive(Default)]
 pub(crate) struct EventBuffer<'a> {
+    /// Buffer.
     buf: Vec<Event<'a>>,
-    nest: u32,
+    /// Nest level.
+    nest_lv: u32,
 }
 
 impl<'a> EventBuffer<'a> {
@@ -27,15 +29,17 @@ impl<'a> EventBuffer<'a> {
     ///
     /// Panics if event nest level is overflowed or underflowed.
     pub fn input(&mut self, event: Event<'a>) -> Option<Vec<Event<'a>>> {
-        debug_assert!((self.nest == 0) == self.buf.is_empty());
+        debug_assert!((self.nest_lv == 0) == self.buf.is_empty());
 
+        // Get increment value of nest level.
         let nest_up = match &event {
             Event::Start(_) => 1,
             Event::End(_) => -1,
             _ => 0,
         };
 
-        let Some(nest) = self.nest.checked_add_signed(nest_up) else {
+        // Increment the nest level, and report if overflow occurs.
+        let Some(nest_lv) = self.nest_lv.checked_add_signed(nest_up) else {
             panic!(
                 "{}",
                 match nest_up.cmp(&0) {
@@ -46,10 +50,12 @@ impl<'a> EventBuffer<'a> {
             )
         };
 
+        // Append event information.
         self.buf.push(event);
-        self.nest = nest;
+        self.nest_lv = nest_lv;
 
-        if self.nest == 0 {
+        // Returns block.
+        if self.nest_lv == 0 {
             let old_buf = mem::take(&mut self.buf);
             return Some(old_buf);
         }

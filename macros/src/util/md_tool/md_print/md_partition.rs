@@ -1,3 +1,5 @@
+//! Provider of [`MdPartition`].
+
 use crate::{msg, util::md_tool::md_print::*};
 use pulldown_cmark::{Event, LinkType, Tag, TagEnd};
 use pulldown_cmark_to_cmark::State;
@@ -5,7 +7,7 @@ use std::iter::Peekable;
 
 /// Markdown partition.
 ///
-/// About backgrounds: See document of [`MdSplitter`].
+/// Backgrounds: See document of [`MdSplitter`].
 pub(crate) struct MdPartition<'a> {
     /// Markdown type.
     md_type: MdType,

@@ -1,3 +1,5 @@
+//! Provider of [`MdPrinter`].
+
 use crate::util::md_tool::md_print::*;
 use crate::*;
 use pulldown_cmark::Event;

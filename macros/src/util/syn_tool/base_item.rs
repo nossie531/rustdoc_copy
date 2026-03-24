@@ -1,4 +1,6 @@
-//! Provider of [`RootItem`].
+//! Provider of [`BaseItem`].
+
+use std::mem;
 
 use crate::util::syn_tool::*;
 use syn::{ItemEnum, ItemImpl, ItemStruct, ItemTrait};
@@ -8,11 +10,6 @@ use syn::{ItemEnum, ItemImpl, ItemStruct, ItemTrait};
 pub(crate) struct BaseItem(syn::Item);
 
 impl BaseItem {
-    /// Creates a instance from item reference.
-    pub fn from_ref(r: &syn::Item) -> &Self {
-        unsafe { std::mem::transmute(r) }
-    }
-
     /// Returns `true` if this item is documentable.
     pub fn is_documentable(&self) -> bool {
         #[rustfmt::skip]
@@ -41,6 +38,11 @@ impl BaseItem {
             | syn::Item::Struct(_)
             | syn::Item::Trait(_)
         );
+    }
+
+    /// Returns actual self item.
+    pub fn self_item(&self) -> &syn::Item {
+        &self.0
     }
 
     /// Returns attributes.
@@ -128,5 +130,11 @@ impl BaseItem {
             let id = id.to_string();
             Some(SideItem::new(id, attrs))
         })
+    }
+}
+
+impl AsRef<BaseItem> for syn::Item {
+    fn as_ref(&self) -> &BaseItem {
+        unsafe { mem::transmute(self) }
     }
 }

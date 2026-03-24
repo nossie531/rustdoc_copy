@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `Self` in API link is not considered (#1)
 - Copy guard with reference link (#2)
 
 ### Changed

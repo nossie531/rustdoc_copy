@@ -1,4 +1,4 @@
-//! Syntax nodes.
+//! Custom syntax nodes.
 
 pub(crate) use doc_file::*;
 pub(crate) use doc_share::*;
