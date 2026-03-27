@@ -1,4 +1,4 @@
-//! Modules for documentation. 
+//! Modules for documentation.
 
 pub mod normal_path_error {
     #![doc = "About normal path error."]

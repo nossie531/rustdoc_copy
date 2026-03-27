@@ -20,7 +20,6 @@ pub(crate) fn print_doc_chunk_mod(chunk_mod: &DocChunkMod) -> TokenStream {
     let subs_macro = subs_macro(chunk_mod);
     let all_macro = all_macro(chunk_mod);
     let sub_mod = sub_mod(chunk_mod);
-
     let contents = quote! {
         #head_macro
         #body_macro
@@ -118,7 +117,7 @@ fn sub_item_mod(path: &syn::Path, chunk: &DocChunk) -> TokenStream {
 
 /// Adjust links.
 fn adjust_links<'a>(
-    chunk: &Ref<DocChunkBody<'a>>,
+    chunk: &Ref<DocChunkCore<'a>>,
     events: impl Iterator<Item = Event<'a>>,
 ) -> impl Iterator<Item = Event<'a>> {
     let mut la = LinkAdjuster::new()

@@ -17,27 +17,27 @@ const COPY_GUARD: &str = "!copy_guard";
 /// - Root of document
 /// - Section of document
 #[derive(Clone)]
-pub(crate) struct DocChunk<'a>(Rc<RefCell<DocChunkBody<'a>>>);
+pub(crate) struct DocChunk<'a>(Rc<RefCell<DocChunkCore<'a>>>);
 
-/// Body of [`DocChunk`].
+/// Core of [`DocChunk`].
 #[derive(Default)]
-pub(crate) struct DocChunkBody<'a> {
+pub(crate) struct DocChunkCore<'a> {
     /// Heading level.
     level: u8,
-    /// Markdown Fragment ID of this chunk.
-    md_id: Option<String>,
-    /// Rust ID of this chunk.
+    /// Rust ID.
     rs_id: Option<String>,
-    /// Actual target of `Self`.
+    /// Markdown Fragment ID.
+    md_id: Option<String>,
+    /// Actual target of `Self` (Root only).
     self_item: Option<&'a syn::Item>,
+    /// Parent chunk.
+    parent: Option<Weak<RefCell<DocChunkCore<'a>>>>,
     /// Events of head.
     head_events: Vec<Event<'a>>,
     /// Events of body.
     body_events: Vec<Event<'a>>,
-    /// Definitions.
+    /// Definitions (Root only).
     defs: Rc<HashMap<String, String>>,
-    /// Parent chunk.
-    parent: Option<Weak<RefCell<DocChunkBody<'a>>>>,
     /// Child chunks.
     chunks: Vec<DocChunk<'a>>,
 }
@@ -45,7 +45,7 @@ pub(crate) struct DocChunkBody<'a> {
 impl<'a> DocChunk<'a> {
     /// Creates a new empty root.
     pub(crate) fn new_empty_root(defs: HashMap<String, String>) -> Self {
-        Self(Rc::new(RefCell::new(DocChunkBody {
+        Self(Rc::new(RefCell::new(DocChunkCore {
             defs: Rc::new(defs),
             ..Default::default()
         })))
@@ -53,7 +53,7 @@ impl<'a> DocChunk<'a> {
 
     /// Creates a new empty chunk.
     pub(crate) fn new_empty_chunk(level: u8) -> Self {
-        Self(Rc::new(RefCell::new(DocChunkBody {
+        Self(Rc::new(RefCell::new(DocChunkCore {
             level,
             ..Default::default()
         })))
@@ -66,12 +66,12 @@ impl<'a> DocChunk<'a> {
     }
 
     /// Returns borrowed body.
-    pub fn borrow(&self) -> Ref<'_, DocChunkBody<'a>> {
+    pub fn borrow(&self) -> Ref<'_, DocChunkCore<'a>> {
         self.0.borrow()
     }
 
     /// Returns mutable borrowed body.
-    pub fn borrow_mut(&self) -> RefMut<'_, DocChunkBody<'a>> {
+    pub fn borrow_mut(&self) -> RefMut<'_, DocChunkCore<'a>> {
         self.0.borrow_mut()
     }
 
@@ -164,7 +164,7 @@ impl<'a> DocChunk<'a> {
     }
 }
 
-impl<'a> DocChunkBody<'a> {
+impl<'a> DocChunkCore<'a> {
     /// Returns `true` if this chunk is root.
     pub fn is_root(&self) -> bool {
         self.parent.is_none()
@@ -175,14 +175,19 @@ impl<'a> DocChunkBody<'a> {
         self.level
     }
 
-    /// Returns Markdown Fragment ID of this chunk.
-    pub fn md_id(&self) -> Option<&str> {
-        self.md_id.as_deref()
+    /// Returns title.
+    pub fn title(&self) -> String {
+        md_tool::text(self.head_events.iter().cloned())
     }
 
-    /// Returns Rust ID of this chunk.
+    /// Returns Rust ID.
     pub fn rs_id(&self) -> Option<&str> {
         self.rs_id.as_deref()
+    }
+
+    /// Returns Markdown Fragment ID.
+    pub fn md_id(&self) -> Option<&str> {
+        self.md_id.as_deref()
     }
 
     /// Returns Actual target of `Self`.
@@ -190,9 +195,9 @@ impl<'a> DocChunkBody<'a> {
         self.self_item
     }
 
-    /// Returns title.
-    pub fn title(&self) -> String {
-        md_tool::text(self.head_events.iter().cloned())
+    /// Returns copy guard URL root.
+    pub fn copy_guard(&self) -> Option<&str> {
+        self.defs.get(COPY_GUARD).map(|x| x.as_str())
     }
 
     /// Returns events of heading.
@@ -203,11 +208,6 @@ impl<'a> DocChunkBody<'a> {
     /// Returns events of body.
     pub fn body_events(&self) -> impl Iterator<Item = Event<'a>> {
         self.body_events.iter().cloned()
-    }
-
-    /// Returns copy guard URL root.
-    pub fn copy_guard(&self) -> Option<&str> {
-        self.defs.get(COPY_GUARD).map(|x| x.as_str())
     }
 
     /// Returns definitions blocks.
@@ -228,13 +228,13 @@ impl<'a> DocChunkBody<'a> {
         self.copy_guard().is_some_and(|x| url.starts_with(x))
     }
 
-    /// Sets Markdown Fragment ID of this chunk.
-    pub fn set_md_id(&mut self, value: String) {
-        self.md_id = Some(value);
-    }
-
-    /// Sets Rust ID of this chunk.
+    /// Sets Rust ID.
     pub fn set_rs_id(&mut self, value: String) {
         self.rs_id = Some(value);
+    }
+
+    /// Sets Markdown Fragment ID.
+    pub fn set_md_id(&mut self, value: String) {
+        self.md_id = Some(value);
     }
 }
