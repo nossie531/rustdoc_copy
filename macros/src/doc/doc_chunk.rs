@@ -28,8 +28,10 @@ pub(crate) struct DocChunkCore<'a> {
     rs_id: Option<String>,
     /// Markdown Fragment ID.
     md_id: Option<String>,
-    /// Actual target of `Self` (Root only).
+    /// Target item of `Self` (Root only).
     self_item: Option<&'a syn::Item>,
+    /// Root chunk.
+    root: Weak<RefCell<DocChunkCore<'a>>>,
     /// Parent chunk.
     parent: Option<Weak<RefCell<DocChunkCore<'a>>>>,
     /// Events of head.
@@ -45,10 +47,13 @@ pub(crate) struct DocChunkCore<'a> {
 impl<'a> DocChunk<'a> {
     /// Creates a new empty root.
     pub(crate) fn new_empty_root(defs: HashMap<String, String>) -> Self {
-        Self(Rc::new(RefCell::new(DocChunkCore {
-            defs: Rc::new(defs),
-            ..Default::default()
-        })))
+        Self(Rc::new_cyclic(|weak| {
+            RefCell::new(DocChunkCore {
+                root: weak.clone(),
+                defs: Rc::new(defs),
+                ..Default::default()
+            })
+        }))
     }
 
     /// Creates a new empty chunk.
@@ -100,6 +105,7 @@ impl<'a> DocChunk<'a> {
         let child_edit = &mut child.borrow_mut();
         child_edit.self_item = this.self_item;
         child_edit.defs = this.defs.clone();
+        child_edit.root = this.root.clone();
         child_edit.parent = Some(Rc::downgrade(&self.0));
         this.chunks.push(child_clone);
         this.chunks.last().unwrap().clone()
@@ -190,9 +196,10 @@ impl<'a> DocChunkCore<'a> {
         self.md_id.as_deref()
     }
 
-    /// Returns Actual target of `Self`.
+    /// Target item of `Self`.
     pub fn self_item(&self) -> Option<&'a syn::Item> {
-        self.self_item
+        let root = self.root.upgrade().unwrap();
+        root.borrow().self_item
     }
 
     /// Returns copy guard URL root.

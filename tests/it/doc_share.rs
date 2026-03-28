@@ -243,14 +243,15 @@ fn test_various_self() {
         (tgt3::top!(), "Document of [`Self`](target3)."),
         (tgt4::top!(), "Document of [some function](target4)."),
         (tgt5::top!(), "Document of [some function](target5)."),
-        (tgt6::base::top!(), "Document of [`Self::item`](Target6::item)."),
-        (tgt7::base::top!(), "Document of [`Self<T>`](Target7<T>)."),
-        (tgt8::base::top!(), "Document of [`Self`](array)."),
-        (tgt9::base::top!(), "Document of [`Self`](fn)."),
-        (tgt10::base::top!(), "Document of [`Self`](pointer)."),
-        (tgt11::base::top!(), "Document of [`Self`](reference)."),
-        (tgt12::base::top!(), "Document of [`Self`](slice)."),
-        (tgt13::base::top!(), "Document of [`Self`](tuple)."),
+        (tgt6::base::top!(), "Document of [`Self<T>`](Target6<T>)."),
+        (tgt7::base::top!(), "Document of [`Self`](array)."),
+        (tgt8::base::top!(), "Document of [`Self`](fn)."),
+        (tgt9::base::top!(), "Document of [`Self`](pointer)."),
+        (tgt10::base::top!(), "Document of [`Self`](reference)."),
+        (tgt11::base::top!(), "Document of [`Self`](slice)."),
+        (tgt12::base::top!(), "Document of [`Self`](tuple)."),
+        (tgt13::base::top!(), "With [`Self::item`](Target13::item)."),
+        (tgt13::base::sub::cp::body!(), "With [`Self::item`](Target13::item)."),
     ];
 
     for (text, tobe) in datas {
@@ -285,49 +286,53 @@ fn test_various_self() {
     #[allow(unused)]
     fn target5() {}
 
-    /// Document of [`Self::item`].
+    /// Document of [`Self<T>`].
     #[doc_share(tgt6)]
     #[allow(unused)]
-    struct Target6 {
-        item: i32,
-    }
-
-    /// Document of [`Self<T>`].
-    #[doc_share(tgt7)]
-    #[allow(unused)]
-    struct Target7<T> {
+    struct Target6<T> {
         pd: PhantomData<T>,
     }
 
     /// Document of [`Self`].
-    #[doc_share(tgt8)]
+    #[doc_share(tgt7)]
     #[allow(unused)]
     impl SomeTrait for [i32; 3] {}
 
     /// Document of [`Self`].
-    #[doc_share(tgt9)]
+    #[doc_share(tgt8)]
     #[allow(unused)]
     impl SomeTrait for fn() -> () {}
 
     /// Document of [`Self`].
-    #[doc_share(tgt10)]
+    #[doc_share(tgt9)]
     #[allow(unused)]
     impl SomeTrait for *const i32 {}
 
     /// Document of [`Self`].
-    #[doc_share(tgt11)]
+    #[doc_share(tgt10)]
     #[allow(unused)]
     impl SomeTrait for &i32 {}
 
     /// Document of [`Self`].
-    #[doc_share(tgt12)]
+    #[doc_share(tgt11)]
     #[allow(unused)]
     impl SomeTrait for [i32] {}
 
     /// Document of [`Self`].
-    #[doc_share(tgt13)]
+    #[doc_share(tgt12)]
     #[allow(unused)]
     impl SomeTrait for (i32, i32) {}
+
+    /// With [`Self::item`].
+    /// 
+    /// # cp
+    /// 
+    /// With [`Self::item`].
+    #[doc_share(tgt13)]
+    #[allow(unused)]
+    struct Target13 {
+        item: i32,
+    }
 
     #[allow(unused)]
     trait SomeTrait {}
