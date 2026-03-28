@@ -1,7 +1,8 @@
-//! Document parse system.
+//! Document parsing system.
 
 pub(crate) use parse_doc::*;
 
 mod event_buffer;
 mod parse_doc;
-use event_buffer::*;
+mod parse_manager;
+use parse_manager::*;

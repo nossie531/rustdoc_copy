@@ -1,6 +1,6 @@
 //! Provider of [`print_doc_chunk_mod`].
 
-use crate::doc::*;
+use crate::doc_parts::*;
 use crate::print::{LinkAdjuster, terms::*};
 use crate::util::md_tool::md_print::*;
 use crate::util::syn_tool::*;

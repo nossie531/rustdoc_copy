@@ -1,6 +1,6 @@
 //! Provider of [`DocShare`].
 
-use crate::doc::*;
+use crate::doc_parts::*;
 use crate::util::syn_tool::*;
 use crate::util::*;
 use crate::*;

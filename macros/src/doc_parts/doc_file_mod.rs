@@ -1,6 +1,6 @@
 //! Provider of [`DocFileMod`].
 
-use crate::doc::*;
+use crate::doc_parts::*;
 
 /// Module parts for [`doc_file`][crate::doc_file].
 pub(crate) struct DocFileMod<'a> {

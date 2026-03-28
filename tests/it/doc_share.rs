@@ -324,9 +324,9 @@ fn test_various_self() {
     impl SomeTrait for (i32, i32) {}
 
     /// With [`Self::item`].
-    /// 
+    ///
     /// # cp
-    /// 
+    ///
     /// With [`Self::item`].
     #[doc_share(tgt13)]
     #[allow(unused)]

@@ -1,6 +1,6 @@
 //! Provider of [`DocChunkMod`].
 
-use crate::doc::*;
+use crate::doc_parts::*;
 
 /// Module parts for [`DocChunk`].
 pub(crate) struct DocChunkMod<'a, 'd> {

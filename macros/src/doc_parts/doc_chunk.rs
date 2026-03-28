@@ -1,10 +1,10 @@
 //! Provider of [`DocChunk`].
 
+use crate::doc_parts::*;
 use crate::util::md_tool::*;
 use crate::util::*;
 use pulldown_cmark::Event;
 use std::cell::{Ref, RefCell, RefMut};
-use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
 /// Copy guard definition key.
@@ -28,32 +28,25 @@ pub(crate) struct DocChunkCore<'a> {
     rs_id: Option<String>,
     /// Markdown Fragment ID.
     md_id: Option<String>,
-    /// Target item of `Self` (Root only).
-    self_item: Option<&'a syn::Item>,
-    /// Root chunk.
-    root: Weak<RefCell<DocChunkCore<'a>>>,
+    /// Meta information.
+    meta: Rc<DocMeta<'a>>,
     /// Parent chunk.
     parent: Option<Weak<RefCell<DocChunkCore<'a>>>>,
     /// Events of head.
     head_events: Vec<Event<'a>>,
     /// Events of body.
     body_events: Vec<Event<'a>>,
-    /// Definitions (Root only).
-    defs: Rc<HashMap<String, String>>,
     /// Child chunks.
     chunks: Vec<DocChunk<'a>>,
 }
 
 impl<'a> DocChunk<'a> {
     /// Creates a new empty root.
-    pub(crate) fn new_empty_root(defs: HashMap<String, String>) -> Self {
-        Self(Rc::new_cyclic(|weak| {
-            RefCell::new(DocChunkCore {
-                root: weak.clone(),
-                defs: Rc::new(defs),
-                ..Default::default()
-            })
-        }))
+    pub(crate) fn new_empty_root(meta: DocMeta<'a>) -> Self {
+        Self(Rc::new(RefCell::new(DocChunkCore {
+            meta: Rc::new(meta),
+            ..Default::default()
+        })))
     }
 
     /// Creates a new empty chunk.
@@ -62,12 +55,6 @@ impl<'a> DocChunk<'a> {
             level,
             ..Default::default()
         })))
-    }
-
-    /// Creates a new instance with given self item.
-    pub fn with_self_item(self, value: &'a syn::Item) -> Self {
-        self.0.borrow_mut().self_item = Some(value);
-        self
     }
 
     /// Returns borrowed body.
@@ -103,9 +90,7 @@ impl<'a> DocChunk<'a> {
         let this = &mut self.borrow_mut();
         let child_clone = child.clone();
         let child_edit = &mut child.borrow_mut();
-        child_edit.self_item = this.self_item;
-        child_edit.defs = this.defs.clone();
-        child_edit.root = this.root.clone();
+        child_edit.meta = this.meta.clone();
         child_edit.parent = Some(Rc::downgrade(&self.0));
         this.chunks.push(child_clone);
         this.chunks.last().unwrap().clone()
@@ -198,13 +183,12 @@ impl<'a> DocChunkCore<'a> {
 
     /// Target item of `Self`.
     pub fn self_item(&self) -> Option<&'a syn::Item> {
-        let root = self.root.upgrade().unwrap();
-        root.borrow().self_item
+        self.meta.self_item()
     }
 
     /// Returns copy guard URL root.
     pub fn copy_guard(&self) -> Option<&str> {
-        self.defs.get(COPY_GUARD).map(|x| x.as_str())
+        self.meta.defs().get(COPY_GUARD).map(|x| x.as_str())
     }
 
     /// Returns events of heading.
@@ -219,7 +203,8 @@ impl<'a> DocChunkCore<'a> {
 
     /// Returns definitions blocks.
     pub fn defs(&self) -> impl Iterator<Item = (&str, &str)> {
-        self.defs
+        self.meta
+            .defs()
             .iter()
             .map(|(k, v)| (k.as_str(), v.as_str()))
             .filter(move |(_, url)| !self.is_guarding(url))

@@ -1,6 +1,6 @@
 //! Provider of [`DocFile`].
 
-use crate::doc::*;
+use crate::doc_parts::*;
 use crate::util::md_tool::*;
 use crate::util::*;
 use crate::*;
@@ -55,7 +55,7 @@ impl ToTokens for DocFile {
         };
 
         // Extract document chunk from fragment key.
-        let chunk = &mut parse::parse_doc(md);
+        let chunk = &mut parse::parse_md_file(md);
         let chunk = &match chunk.extract(md_path.key()) {
             Some(x) => x,
             None => {

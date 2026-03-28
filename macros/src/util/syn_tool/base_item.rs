@@ -1,8 +1,7 @@
 //! Provider of [`BaseItem`].
 
-use std::mem;
-
 use crate::util::syn_tool::*;
+use std::mem;
 use syn::{ItemEnum, ItemImpl, ItemStruct, ItemTrait};
 
 /// Root item.
@@ -40,8 +39,8 @@ impl BaseItem {
         );
     }
 
-    /// Returns actual self item.
-    pub fn self_item(&self) -> &syn::Item {
+    /// Returns item.
+    pub fn get(&self) -> &syn::Item {
         &self.0
     }
 

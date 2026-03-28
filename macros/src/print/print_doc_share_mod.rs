@@ -1,6 +1,6 @@
 //! Provider of [`print_doc_share_mod`].
 
-use crate::doc::*;
+use crate::doc_parts::*;
 use crate::print::terms::*;
 use crate::util::syn_tool::*;
 use crate::*;
@@ -27,7 +27,7 @@ fn print_doc_item(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
 fn print_simple_doc_item(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
     let md = &doc_attr::read(item.attrs());
     let path = &ns::path([mod_id]);
-    let chunk = &parse::parse_doc(md).with_self_item(item.self_item());
+    let chunk = &parse::parse_rs_doc(item.get(), md);
     let chunk_mod = &DocChunkMod::new_root(path, chunk);
     print::print_doc_chunk_mod(chunk_mod)
 }
@@ -48,7 +48,7 @@ fn print_complex_doc_item(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
 fn print_base(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
     let md = &doc_attr::read(item.attrs());
     let path = &paths::base(mod_id);
-    let chunk = &parse::parse_doc(md).with_self_item(item.self_item());
+    let chunk = &parse::parse_rs_doc(item.get(), md);
     let chunk_mod = &DocChunkMod::new_root(path, chunk);
     print::print_doc_chunk_mod(chunk_mod)
 }
@@ -61,7 +61,7 @@ fn print_side(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
         let md = &doc_attr::read(side.attrs());
         let id = &ns::id(side.id());
         let path = &paths::side_item(mod_id, id);
-        let chunk = &parse::parse_doc(md).with_self_item(item.self_item());
+        let chunk = &parse::parse_rs_doc(item.get(), md);
         let chunk_mod = &DocChunkMod::new_root(path, chunk);
         contents.extend(print::print_doc_chunk_mod(chunk_mod));
     }

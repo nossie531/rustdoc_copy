@@ -4,7 +4,7 @@
 //! _Forgive me if the document is hard to read._
 
 mod custom;
-mod doc;
+mod doc_parts;
 mod msg;
 mod parse;
 mod print;

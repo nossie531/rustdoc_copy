@@ -1,4 +1,4 @@
-//! Document print system.
+//! Document printing system.
 
 pub(crate) mod terms;
 pub(crate) use print_doc_chunk_mod::*;
