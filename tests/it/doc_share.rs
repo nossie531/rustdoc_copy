@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-
 use rustdoc_copy::prelude::*;
 
 #[test]
