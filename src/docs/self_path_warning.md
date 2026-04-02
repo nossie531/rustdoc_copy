@@ -10,7 +10,7 @@ Documentation of following code generate _no_ warning.
 
 ```rust
 pub mod my_mod {
-    use crate::prelude::*;
+    use rustdoc_copy::prelude::*;
 
     /// This enum has [`Self::Foo`].
     #[doc_share(doc)]
@@ -30,7 +30,7 @@ Documentation of following code generate warning.
 
 ```rust
 pub mod my_mod {
-    use crate::prelude::*;
+    use rustdoc_copy::prelude::*;
 
     /// This enum has [`Self::Foo`]. // <---- ⚠️ Warning reason.
     #[doc_share(doc)]
