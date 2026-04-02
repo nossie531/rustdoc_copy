@@ -9,6 +9,7 @@ _Forgive me if the document is hard to read._
 
 - [`doc_share`] - Copy rustdoc comment from other rustdoc comment.
 - [`doc_file`] - Copy rustdoc comment from Markdown file.
+- [`doc_on_only`] - Stop documentation for build speed.
 
 ## Highlights
 
@@ -17,22 +18,23 @@ _Forgive me if the document is hard to read._
 - [Document path][p1] supports partial copy in various methods.
 - [Link adjustments][p2] prevents broken links in various situations.
 - [`doc_file`] supports heading level adjusting.
-- [`doc_file`] supports link copy guard (for `docs.rs` URL in `README.md`).
 
 [p1]: #document-path
 [p2]: #link-adjustments
 
 🤔 Cons
 
-- [No root document sharing][c1] (expecting futrue Rust).
-- [No file update detecting][c2] (expecting futrue Rust).
-- [Miss copy of document][c3] (expecting futrue crates for Markdown).
-- [Mysterious compilation troubles][c4] (maybe not a big deal).
+- [No IDE support][c1] (expecting future IDE).
+- [No root document sharing][c2] (expecting futrue Rust).
+- [No file update detecting][c3] (expecting futrue Rust).
+- [Miss copy of document][c4] (expecting futrue crates for Markdown).
+- [Mysterious compilation troubles][c5] (maybe not a big deal).
 
-[c1]: #no-root-document-shareing
-[c2]: #no-file-update-detecting
-[c3]: #miss-copy-of-document
-[c4]: #mysterious-compilation-troubles
+[c1]: #no-ide-support
+[c2]: #no-root-document-shareing
+[c3]: #no-file-update-detecting
+[c4]: #miss-copy-of-document
+[c5]: #mysterious-compilation-troubles
 
 ## Examples
 
@@ -221,21 +223,34 @@ To prevent broken links, folowing links are adjusted automatically.
 
   Up for partial copy, reference style link is converted to inline style.
 
-- links with `Self` keyword
+  (In contrast, footnotes are not adjusted. Because they lack embeding ability.
+  Use `defs!` macro instead.)
+
+- links with `Self` keyword (for [`doc_share`]).
 
   `Self` in Rust path is converted to actual item ID.
 
-  This almost works fine about links like ``[`method`](Self::method)``.
-  But pay attention about links like ``[`Self::method`]`` (Because
-  conversion target is URL only, and does not includes label).
+  Note that conversion target is URL only, and does not includes label.
+  So, links like ``[`method`](Self::method)`` almost works fine. But
+  links like ``[`Self::method`]`` sometimes breeds confusion.
 
-In contrast, following links are not adjusted.
+  (In contrast, `self` and `super` keywords are not adjusted.
+  Because attribute macros can not know module of target item.)
 
-- Footnotes
+- links under copy guard path (for [`doc_file`]).
 
-  Because they lack embeding ability. Use `defs!` macro.
+  Up for API links in `README.md`, URLs under the copy guard path are ignored.
+
+  See ["Link copy guard"][doc_file#link-copy-guard] section in [`doc_file`]
+  document for more detail.
 
 ## Trouble shooting
+
+### No IDE support
+
+This crate uses the `doc` attribute frequently for document importing.
+But documentation by `doc` attributes are reflected only rustdoc file,
+not IDE tooltips (At least VS Code with rust-analyzer in 2026).
 
 ### No root document shareing
 
@@ -274,9 +289,11 @@ See [CHANGELOG](CHANGELOG.md).
 
 <!-- links -->
 
-[!copy_guard]: https://docs.rs/rustdoc_copy/0.1.0/
-[`doc_share`]: https://docs.rs/rustdoc_copy/0.1.0/rustdoc_copy/attr.doc_share.html
-[`doc_file`]: https://docs.rs/rustdoc_copy/0.1.0/rustdoc_copy/macro.doc_file.html
-[docs::normal_path_error]: https://docs.rs/rustdoc_copy/0.1.0/rustdoc_copy/docs/normal_path_error/index.html
-[docs::self_path_warning]: https://docs.rs/rustdoc_copy/0.1.0/rustdoc_copy/docs/self_path_error/index.html
-[doc_file#fragment-key]: https://docs.rs/rustdoc_copy/0.1.0/rustdoc_copy/macro.doc_file.html#fragment-key
+[!copy_guard]: https://docs.rs/rustdoc_copy/0.2.0/
+[`doc_share`]: https://docs.rs/rustdoc_copy/0.2.0/rustdoc_copy/attr.doc_share.html
+[`doc_file`]: https://docs.rs/rustdoc_copy/0.2.0/rustdoc_copy/macro.doc_file.html
+[`doc_on_only`]: https://docs.rs/rustdoc_copy/0.2.0/rustdoc_copy/attr.doc_on_only.html
+[docs::normal_path_error]: https://docs.rs/rustdoc_copy/0.2.0/rustdoc_copy/docs/normal_path_error/index.html
+[docs::self_path_warning]: https://docs.rs/rustdoc_copy/0.2.0/rustdoc_copy/docs/self_path_error/index.html
+[doc_file#fragment-key]: https://docs.rs/rustdoc_copy/0.2.0/rustdoc_copy/macro.doc_file.html#fragment-key
+[doc_file#link-copy-guard]: https://docs.rs/rustdoc_copy/0.2.0/rustdoc_copy/macro.doc_file.html#link-copy-guard
