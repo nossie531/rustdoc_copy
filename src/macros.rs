@@ -79,6 +79,6 @@
 #[macro_export]
 macro_rules! doc_file {
     ($id:ident, $path:literal) => {
-        ::rustdoc_copy_macro::doc_file!($id, $path);
+        $crate::rustdoc_copy_macro::doc_file!($id, $path);
     };
 }

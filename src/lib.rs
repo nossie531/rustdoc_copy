@@ -13,8 +13,13 @@
 doc_file!(doc, "README.md#");
 
 pub mod prelude;
+pub use rustdoc_copy_macro;
 pub use rustdoc_copy_macro::doc_on_only;
 pub use rustdoc_copy_macro::doc_share;
+
+#[cfg(feature = "doc_on")]
+pub mod docs;
+
 mod macros;
 
 #[doc(hidden)]
@@ -22,5 +27,3 @@ mod macros;
 #[path = "../tests_compile_fail/mod.rs"]
 mod tests_compile_fail;
 
-#[cfg(feature = "doc_on")]
-pub mod docs;
