@@ -1,5 +1,5 @@
-use std::marker::PhantomData;
 use rustdoc_copy::prelude::*;
+use std::marker::PhantomData;
 
 #[test]
 fn test_const() {

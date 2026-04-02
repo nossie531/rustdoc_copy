@@ -1,4 +1,6 @@
-//! Messages.
+//! Crate's messages.
+
+#![cfg(feature = "doc_on")]
 
 /// Message that assert event should be broken link.
 pub const EVENT_SHOULD_BE_BROKEN_LINK: &str = "Event must be broken link.";

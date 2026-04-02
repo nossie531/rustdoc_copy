@@ -1,4 +1,6 @@
-//! Utilities.
+//! Crate's utilities.
+
+#![cfg(feature = "doc_on")]
 
 pub(crate) mod md_tool;
 pub(crate) mod naming;

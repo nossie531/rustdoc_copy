@@ -1,4 +1,6 @@
-//! Document system.
+//! Document parts.
+
+#![cfg(feature = "doc_on")]
 
 pub(crate) mod chunk_id;
 pub(crate) use doc_chunk::*;

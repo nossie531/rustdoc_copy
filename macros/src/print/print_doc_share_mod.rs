@@ -4,6 +4,7 @@ use crate::doc_parts::*;
 use crate::print::terms::*;
 use crate::util::syn_tool::*;
 use crate::*;
+use proc_macro2::TokenStream;
 
 /// Returns tokens of given [`DocShareMod`].
 pub(crate) fn print_doc_share_mod(doc_item_mod: &DocShareMod) -> TokenStream {

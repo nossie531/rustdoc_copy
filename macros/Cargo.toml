@@ -11,10 +11,22 @@ license.workspace = true
 proc-macro = true
 
 [dependencies]
-pulldown-cmark = { version = "0.13.0", default-features = false }
-pulldown-cmark-to-cmark = "22"
-proc-macro2 = "1"
-quote = "1"
-rustc_lexer = "0.1"
-syn = { version = "2", features = ["full"] }
-unicode-ident = "1"
+proc-macro2 = { optional = true, version = "1" }
+pulldown-cmark = { optional = true, version = "0.13.0", default-features = false }
+pulldown-cmark-to-cmark = { optional = true, version = "22"}
+quote = { optional = true, version = "1" }
+rustc_lexer = { optional = true, version = "0.1" }
+syn = { optional = true, version = "2", features = ["full"] }
+unicode-ident = { optional = true, version = "1" }
+
+[features]
+default = ["doc_on"]
+doc_on = [
+    "dep:proc-macro2",
+    "dep:pulldown-cmark",
+    "dep:pulldown-cmark-to-cmark",
+    "dep:quote",
+    "dep:rustc_lexer",
+    "dep:syn",
+    "dep:unicode-ident",
+]
