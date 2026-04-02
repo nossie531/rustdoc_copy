@@ -9,7 +9,7 @@ license = "MIT"
 
 [package]
 name = "rustdoc_copy"
-version = "0.1.0"
+version = "0.2.0"
 description = "Rustdoc comment copy helper."
 keywords = ["documentation", "rustdoc"]
 categories = ["development-tools"]
@@ -19,4 +19,10 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
-rustdoc_copy_macro = { version = "=0.1.0", path = "macros" }
+rustdoc_copy_macro = { version = "=0.2.0", path = "macros", default-features = false }
+
+[features]
+default = ["doc_on"]
+doc_on = [
+    "rustdoc_copy_macro/doc_on"
+]
