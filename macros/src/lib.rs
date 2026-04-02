@@ -43,9 +43,9 @@ pub fn doc_share(attr: pm::TokenStream, body: pm::TokenStream) -> pm::TokenStrea
 
 /// Disables documentations if `doc_on` feature flag is OFF.
 ///
-/// # Build time acceleration
+/// # Build acceleration
 ///
-/// This crate is bit heavy (As of 2025, default build takes several seconds
+/// This crate is bit heavy (As of 2026, default build takes several seconds
 /// on the author's environment). Because it includes parser crates for Rust
 /// and Markdown text. And sadly, `Cargo.toml` has `dev-dependencies` but no
 /// `doc-dependencies`. As a result, outside of documentation, this crate is
@@ -55,12 +55,14 @@ pub fn doc_share(attr: pm::TokenStream, body: pm::TokenStream) -> pm::TokenStrea
 /// attribute are used in combination. First, if `doc_on` is OFF, most items
 /// are replaced with items that have only their entry points. This speed up
 /// the build process. However, since document copy is not generated, its
-/// importing part cause compiation errors. Here, [`doc_on_only`](Self)
-/// always generates empty document to avoid this error.
+/// importing part cause compiation errors. Here, to avoid this error,
+/// [`doc_on_only`](Self) generates empty document when `doc_on` is OFF.
 ///
 /// # Build settings
 ///
-/// The `Cargo.toml` file that works with this attribute looks like this:
+/// This attribute is often used with settings like followings.
+///
+/// -&nbsp;`Cargo.toml`
 ///
 /// ```text
 /// [package]
@@ -78,10 +80,18 @@ pub fn doc_share(attr: pm::TokenStream, body: pm::TokenStream) -> pm::TokenStrea
 /// all-features = true
 /// ```
 ///
-/// In this example, we define a feature flag named `doc_on` in the crate
-/// and propagate it to the feature flag of the same name in `rustdoc_copy`.
-/// Additionally, the final section onfigures to enable the `doc_on` flag
-/// in [`docs.rs`](https://docs.rs/).
+/// -&nbsp;`.vscode/settings.json`
+/// 
+/// ```text
+/// {"rust-analyzer.cargo.allFeatures": true}
+/// ```
+///
+/// This example roughly does the following.
+/// 
+/// - Define a feature flag named `doc_on` in the crate.
+/// - Propagates it to the feature flag of the same name in this crate.
+/// - Configures to enable the `doc_on` flag in [`docs.rs`](https://docs.rs/).
+/// - Configures to enable the `doc_on` flag in IDE (VS Code).
 ///
 /// In this case, following command generate rustdoc locally.
 ///
