@@ -69,14 +69,14 @@ dependencies = [
 
 [[package]]
 name = "rustdoc_copy"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "rustdoc_copy_macro",
 ]
 
 [[package]]
 name = "rustdoc_copy_macro"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "iter_seq_ext",
  "proc-macro2",
