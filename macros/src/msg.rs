@@ -17,6 +17,9 @@ pub const EVENT_NEST_LV_OVERFLOW: &str = "Event nest level is overflowed.";
 /// Message that detect fragment not found.
 pub const FRAGMENT_NOT_FOUND: &str = "Fragment not found.";
 
+/// Message that detect invalid item type.
+pub const INVALID_ITEM_TYPE: &str = "Invalid item type is detected.";
+
 /// Message that detect Markdown print failes.
 pub const MD_PRINT_FAIL: &str = "Markdown print failed.";
 

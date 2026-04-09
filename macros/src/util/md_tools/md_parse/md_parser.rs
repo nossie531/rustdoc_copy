@@ -1,6 +1,6 @@
 //! Provider of [`MdParser`].
 
-use crate::util::md_tool::md_parse::*;
+use crate::util::md_tools::md_parse::*;
 use pulldown_cmark::{Options, Parser, RefDefs};
 use std::collections::HashMap;
 

@@ -1,5 +1,7 @@
 //! Crate's macros.
 
+#![doc(hidden)]
+
 /// Include Markdown file as given name module.
 ///
 /// ## File path

@@ -1,21 +1,22 @@
-//! Operations for Rustdoc API link.
+//! Operations for adjusting `doc_share::Self`.
 
-use crate::util::syn_tool::*;
+use crate::util::syn_tools::*;
 use crate::util::*;
 use crate::*;
+use iter_seq_ext::prelude::*;
 
-/// Returns `true` if given URL contains `Self`.
+/// Returns `true` if given URL contains `doc_share::Self`.
 ///
 /// # How to detect API path or not?
 ///
-/// To determine whether a URL contains `Self` of Rust, first we must
-/// determine whether it is a Rust API path or not. Because, for example,
-/// `Self` as a plain string could also appear in URL query parameters.
+/// To determine whether a URL contains Rust path `doc_share::Self`,
+/// first we must determine whether it is a Rust path or not. Because,
+/// for example, URL query parameters can also contains `doc_share::Self`.
 ///
 /// ## Current strategy
 ///
 /// If the string does not contain character '`/`', the string is treated
-/// as a Rust path. Because '`/`' is not included in Rust API path, but is
+/// as a Rust path. Because '`/`' is not included in Rust path, but is
 /// often included in external URLs. Note that this approach may mistake
 /// about strings that are neither external URLs nor Rust paths.
 /// Fortunately, such patterns are highly unlikely in practice.
@@ -37,18 +38,32 @@ use crate::*;
 /// - However, this feature is not documented and seemes unofficial.
 ///
 /// [`from_str`]: std::str::FromStr::from_str
-pub(crate) fn has_self(value: &str) -> bool {
+pub(crate) fn is_target(value: &str) -> bool {
     if value.contains("/") {
         return false;
     }
 
     let value = trim_backtick(value);
-    RsTokens::new(value).find(RsToken::is_self).is_some()
+    let tokens = RsTokens::new(value);
+    IteratorSeqExt::contains(tokens, &target_path())
 }
 
-/// Returns the path with `Self` replaced by given item.
-pub(crate) fn replace_self(value: &str, self_item: Option<&syn::Item>) -> String {
-    if !has_self(value) {
+/// Returns the text replacing `doc_share::Self` with `Self`.
+pub(crate) fn replace_text(value: &str) -> String {
+    if !is_target(value) {
+        return value.to_string();
+    }
+
+    let pat_path = &target_path();
+    let alt_path = &self_path();
+    let old_tokens = RsTokens::new(value);
+    let new_tokens = IteratorSeqExt::replace(old_tokens, pat_path, alt_path);
+    new_tokens.map(|x| x.code().to_string()).collect()
+}
+
+/// Returns the url replacing `doc_share::Self` with given item.
+pub(crate) fn replace_url(value: &str, self_item: Option<&syn::Item>) -> String {
+    if !is_target(value) {
         return value.to_string();
     }
 
@@ -57,23 +72,37 @@ pub(crate) fn replace_self(value: &str, self_item: Option<&syn::Item>) -> String
     };
 
     let value = trim_backtick(value);
+    let api_id = &api_id.to_string();
+    let pat_path = &target_path();
+    let alt_path = &item_path(api_id);
     let old_tokens = RsTokens::new(value);
-    let new_tokens = old_tokens.map(|ref x| replace_self_token(x, api_id));
-    new_tokens.collect()
+    let new_tokens = IteratorSeqExt::replace(old_tokens, pat_path, alt_path);
+    new_tokens.map(|x| x.code().to_string()).collect()
+}
+
+/// Returns `doc_share::Self` path tokens.
+fn target_path() -> [RsToken<'static>; 4] {
+    [
+        RsToken::new("doc_share", rustc_lexer::TokenKind::Ident),
+        RsToken::new(":", rustc_lexer::TokenKind::Colon),
+        RsToken::new(":", rustc_lexer::TokenKind::Colon),
+        RsToken::new("Self", rustc_lexer::TokenKind::Ident),
+    ]
+}
+
+/// Returns `Self` path tokens.
+fn self_path() -> [RsToken<'static>; 1] {
+    [RsToken::new("Self", rustc_lexer::TokenKind::Ident)]
+}
+
+/// Returns item path tokens.
+fn item_path<'a>(item: &'a str) -> [RsToken<'a>; 1] {
+    [RsToken::new(item, rustc_lexer::TokenKind::Ident)]
 }
 
 /// Returns given text with backticks trimed.
 fn trim_backtick(value: &str) -> &str {
     util::trim_circumfix(value, "`")
-}
-
-/// Returns the token string with `Self` replaced by given ID.
-fn replace_self_token(token: &RsToken, id: &syn::Ident) -> String {
-    if token.is_self() {
-        id.to_string()
-    } else {
-        token.code().to_string()
-    }
 }
 
 /// Returns API ID.

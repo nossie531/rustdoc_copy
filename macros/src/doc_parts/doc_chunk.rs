@@ -1,7 +1,7 @@
 //! Provider of [`DocChunk`].
 
 use crate::doc_parts::*;
-use crate::util::md_tool::*;
+use crate::util::md_tools::*;
 use crate::util::*;
 use pulldown_cmark::Event;
 use std::cell::{Ref, RefCell, RefMut};
@@ -148,7 +148,7 @@ impl<'a> DocChunk<'a> {
         fn adjust_chunk_level(chunk: &mut DocChunk, delta: i8) {
             let chunk = &mut chunk.borrow_mut();
             let old_events = chunk.head_events.drain(..);
-            let new_events = old_events.map(|x| md_tool::add_level(x, delta));
+            let new_events = old_events.map(|x| md_tools::add_level(x, delta));
             let imports = new_events.collect::<Vec<_>>();
             chunk.head_events.extend(imports);
         }
@@ -168,7 +168,7 @@ impl<'a> DocChunkCore<'a> {
 
     /// Returns title.
     pub fn title(&self) -> String {
-        md_tool::text(self.head_events.iter().cloned())
+        md_tools::text(self.head_events.iter().cloned())
     }
 
     /// Returns Rust ID.

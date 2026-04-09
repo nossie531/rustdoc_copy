@@ -11,6 +11,7 @@ license.workspace = true
 proc-macro = true
 
 [dependencies]
+iter_seq_ext = { optional = true, version = "0.1" }
 proc-macro2 = { optional = true, version = "1" }
 pulldown-cmark = { optional = true, version = "0.13.0", default-features = false }
 pulldown-cmark-to-cmark = { optional = true, version = "22"}
@@ -22,6 +23,7 @@ unicode-ident = { optional = true, version = "1" }
 [features]
 default = ["doc_on"]
 doc_on = [
+    "dep:iter_seq_ext",
     "dep:proc-macro2",
     "dep:pulldown-cmark",
     "dep:pulldown-cmark-to-cmark",

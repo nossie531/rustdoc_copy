@@ -1,6 +1,6 @@
 //! Provider of [`MdPartition`].
 
-use crate::{msg, util::md_tool::md_print::*};
+use crate::{msg, util::md_tools::md_print::*};
 use pulldown_cmark::{Event, LinkType, Tag, TagEnd};
 use pulldown_cmark_to_cmark::State;
 use std::iter::Peekable;

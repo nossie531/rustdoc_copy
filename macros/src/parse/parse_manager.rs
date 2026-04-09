@@ -2,8 +2,8 @@
 
 use crate::doc_parts::*;
 use crate::parse::event_buffer::*;
-use crate::util::md_tool::md_parse::*;
-use crate::util::md_tool::*;
+use crate::util::md_tools::md_parse::*;
+use crate::util::md_tools::*;
 use std::collections::HashSet;
 
 /// Document parsing manager.

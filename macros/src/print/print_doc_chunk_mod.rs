@@ -2,8 +2,8 @@
 
 use crate::doc_parts::*;
 use crate::print::{LinkAdjuster, terms::*};
-use crate::util::md_tool::md_print::*;
-use crate::util::syn_tool::*;
+use crate::util::md_tools::md_print::*;
+use crate::util::syn_tools::*;
 use crate::util::*;
 use proc_macro2::TokenStream;
 use pulldown_cmark::Event;
@@ -38,7 +38,7 @@ fn head_macro(chunk_mod: &DocChunkMod) -> TokenStream {
     let chunk = &chunk_mod.chunk().borrow();
     let events = adjust_links(chunk, chunk.head_events());
     let md = MdPrinter::print(events);
-    let tokens = &syn_tool::text(&md);
+    let tokens = &syn_tools::text(&md);
     templates::doc_macro(&ids::head(), tokens)
 }
 
@@ -47,7 +47,7 @@ fn body_macro(chunk_mod: &DocChunkMod) -> TokenStream {
     let chunk = &chunk_mod.chunk().borrow();
     let events = adjust_links(chunk, chunk.body_events());
     let md = MdPrinter::print(events);
-    let tokens = &syn_tool::text(&md);
+    let tokens = &syn_tools::text(&md);
     templates::doc_macro(&ids::body(), tokens)
 }
 
@@ -60,7 +60,7 @@ fn defs_macro(chunk_mod: &DocChunkMod) -> TokenStream {
     let chunk = chunk_mod.chunk().borrow();
     let mds = chunk.defs().map(|(key, url)| format!("[{key}]: {url}"));
     let md = mds.collect::<Vec<_>>().join("\n");
-    let tokens = &syn_tool::text(&md);
+    let tokens = &syn_tools::text(&md);
     templates::doc_macro(&ids::defs(), tokens)
 }
 

@@ -1,6 +1,6 @@
 //! Provider of [`MdPrinter`].
 
-use crate::util::md_tool::md_print::*;
+use crate::util::md_tools::md_print::*;
 use crate::*;
 use pulldown_cmark::Event;
 use pulldown_cmark_to_cmark as cm2cm;

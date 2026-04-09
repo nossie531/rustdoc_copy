@@ -154,18 +154,20 @@ assert_eq!(some_func(), 42);
 
 Partial document is specified by path with following components.
 
-1. Root module
+1. **Root module**
 
-   From first argument of [`doc_share`] and [`doc_file`].
+   Select root by first argument of [`doc_share`] and [`doc_file`].
 
-2. Fragment key
+2. **Fragment key**
 
-   Second argument of [`doc_file`] can include fragment key after file path.
+   Select fragment key after file path ([`doc_file`] only).
 
    See "[Fragment key][doc_file#fragment-key]" section in [`doc_file`]
    for more details.
 
-3. Item module
+3. **Item module**
+
+   Select Rust item in target root or fragment.
 
    | ID                                   | Description        |
    | --                                   | --                 |
@@ -173,14 +175,18 @@ Partial document is specified by path with following components.
    | <code>base</code>                    | Base item          |
    | <code>side::<var>member</var></code> | Member item        |
 
-4. Section module (recursive)
+4. **Section module**
+
+   Select sub section _recursively_ in target Rust item.
 
    | ID                                   | Description   |
    | --                                   | --            |
    | <em>No selection</em>                | Root section  |
    | <code>sub::<var>section</var></code> | Named section |
 
-5. Parts macro
+5. **Parts macro**
+
+   Select block parts in target section.
 
    | ID      | Description                                   |
    | --      | --                                            |
@@ -195,19 +201,19 @@ Partial document is specified by path with following components.
 
 Section identification by title has two subtly different styles.
 
-- _Common rule_
+- _**Common rule**_
 
   - All uppercase characters are converted to lowercase.
-  - Special characters like puctuation and Emoji are ignored.
+  - Special characters like punctuation and Emoji are ignored.
 
-- Global style
+- **Global style**
 
   - This style is used in fragment key in [`doc_file`].
   - This style follows heading anchor rule of GFM.
   - Spaces in the titles are replaced into hyphen ('`-`').
   - Sequential numers are used if same titles exist in the one document.
 
-- Local style
+- **Local style**
   
   - This style is used in section ID in [document path](#document-path).
   - This style follows naming rule of Rust module.
@@ -217,27 +223,27 @@ Section identification by title has two subtly different styles.
 
 ### Link adjustments
 
-To prevent broken links, folowing links are adjusted automatically.
+To prevent broken links, folowing mechanisms are supported.
 
-- links with reference and definition
+- **Link embeding**
 
   Up for partial copy, reference style link is converted to inline style.
 
   (In contrast, footnotes are not adjusted. Because they lack embeding ability.
-  Use `defs!` macro instead.)
+  So, use `defs!` macro instead.)
 
-- links with `Self` keyword (for [`doc_share`]).
+- **Special `Self`**
 
-  `Self` in Rust path is converted to actual item ID.
+  Up for `Self` keyword meaning changes, `doc_share::Self` is prepared.
 
-  Note that conversion target is URL only, and does not includes label.
-  So, links like ``[`method`](Self::method)`` almost works fine. But
-  links like ``[`Self::method`]`` sometimes breeds confusion.
+  See ["`doc_share::Self`"][doc_share#doc-share-self] section in [`doc_share`]
+  document for more detail.
 
-  (In contrast, `self` and `super` keywords are not adjusted.
-  Because attribute macros can not know module of target item.)
+  (In contrast, `self` and `super` keywords do not have a mechanism for
+  `doc_share`. Because attribute macros can not know module of item.
+  So, use target name directly instead.)
 
-- links under copy guard path (for [`doc_file`]).
+- **Copy guard**
 
   Up for API links in `README.md`, URLs under the copy guard path are ignored.
 
@@ -297,3 +303,4 @@ See [CHANGELOG](CHANGELOG.md).
 [docs::self_path_warning]: https://docs.rs/rustdoc_copy/0.2.0/rustdoc_copy/docs/self_path_error/index.html
 [doc_file#fragment-key]: https://docs.rs/rustdoc_copy/0.2.0/rustdoc_copy/macro.doc_file.html#fragment-key
 [doc_file#link-copy-guard]: https://docs.rs/rustdoc_copy/0.2.0/rustdoc_copy/macro.doc_file.html#link-copy-guard
+[doc_share#doc-share-self]: https://docs.rs/rustdoc_copy/0.2.0/rustdoc_copy/attr.doc_share.html#doc-share-self

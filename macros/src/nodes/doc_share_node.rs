@@ -1,7 +1,7 @@
 //! Provider of [`DocShareNode`].
 
 use crate::doc_parts::*;
-use crate::util::syn_tool::*;
+use crate::util::syn_tools::*;
 use crate::util::*;
 use crate::*;
 use proc_macro2::TokenStream;
@@ -29,8 +29,8 @@ impl DocShareNode {
     /// Parse all inputs.
     pub fn parse_all(attr: TokenStream, body: TokenStream) -> Result<Self, TokenStream> {
         // Prase attribute and body.
-        let mod_id = syn_tool::parse::<syn::Ident>(attr);
-        let body = syn_tool::parse::<Self>(body);
+        let mod_id = syn_tools::parse::<syn::Ident>(attr);
+        let body = syn_tools::parse::<Self>(body);
 
         // Process errors.
         let valid = body.as_ref().map_or_else(|_| Ok(()), Self::validate);
@@ -88,7 +88,7 @@ impl ToTokens for DocShareNode {
         let mod_id = self.mod_id();
         let syn_item = &self.syn_item();
         let doc_item = &DocShareMod::new(mod_id, syn_item);
-        tokens.extend(syn_item.into_token_stream());
+        tokens.extend(print::print_doc_share_item(syn_item));
         tokens.extend(print::print_doc_share_mod(doc_item));
     }
 }

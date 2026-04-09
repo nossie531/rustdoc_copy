@@ -1,7 +1,7 @@
 //! Provider of [`DocFileNode`].
 
 use crate::doc_parts::*;
-use crate::util::md_tool::*;
+use crate::util::md_tools::*;
 use crate::util::*;
 use crate::*;
 use proc_macro2::TokenStream;
@@ -21,7 +21,7 @@ pub(crate) struct DocFileNode {
 impl DocFileNode {
     /// Translate input tokens to output tokens.
     pub fn translate(input: TokenStream) -> TokenStream {
-        match syn_tool::parse::<Self>(input) {
+        match syn_tools::parse::<Self>(input) {
             Ok(x) => x.into_token_stream(),
             Err(x) => x.into_token_stream(),
         }

@@ -9,6 +9,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af"
 
 [[package]]
+name = "iter_seq_ext"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3421a12e4252cbbd6b747d92d1afdd06577dbb90d6ce22c87de85c4a22981e60"
+
+[[package]]
 name = "memchr"
 version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -72,6 +78,7 @@ dependencies = [
 name = "rustdoc_copy_macro"
 version = "0.1.0"
 dependencies = [
+ "iter_seq_ext",
  "proc-macro2",
  "pulldown-cmark",
  "pulldown-cmark-to-cmark",

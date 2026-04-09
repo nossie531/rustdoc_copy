@@ -35,6 +35,7 @@ impl<'a> Iterator for RsTokens<'a> {
 }
 
 /// Rust token.
+#[derive(Clone, Eq, PartialEq)]
 pub(crate) struct RsToken<'a> {
     /// Rust code.
     code: &'a str,
@@ -48,18 +49,8 @@ impl<'a> RsToken<'a> {
         Self { code, kind }
     }
 
-    /// Returns `true` if token is keyword `Self`.
-    pub fn is_self(&self) -> bool {
-        self.kind() == TokenKind::Ident && self.code() == "Self"
-    }
-
     /// Returns Rust code.
     pub fn code(&self) -> &'a str {
         self.code
-    }
-
-    /// Returns token kind.
-    pub fn kind(&self) -> TokenKind {
-        self.kind
     }
 }

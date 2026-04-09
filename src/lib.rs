@@ -26,4 +26,3 @@ mod macros;
 #[cfg(feature = "doc_on")]
 #[path = "../tests_compile_fail/mod.rs"]
 mod tests_compile_fail;
-

@@ -1,8 +1,8 @@
 //! Provider of [`LinkAdjuster`].
 
-use crate::util::md_tool::*;
-use crate::util::*;
-use pulldown_cmark::{CowStr, Event, LinkType, Tag};
+use crate::print::*;
+use crate::util::md_tools::md_events::*;
+use pulldown_cmark::{CowStr, Event, LinkType, Tag, TagEnd};
 
 /// Markdown link adjuster.
 #[derive(Default)]
@@ -11,6 +11,8 @@ pub(crate) struct LinkAdjuster {
     self_item: Option<syn::Item>,
     /// Copy guard URL root
     copy_guard: Option<String>,
+    /// `true` if context is in `doc_share::Self` shortcut.
+    in_self_shortcut: bool,
 }
 
 impl LinkAdjuster {
@@ -46,19 +48,19 @@ impl LinkAdjuster {
 
     /// Adjusts URL event by copy guard.
     fn adjust_for_guard<'i>(&self, event: &Event<'i>) -> Event<'i> {
-        let Some(url_event) = MdEvent::as_link(event) else {
+        let Some(url_event) = UrlEvent::try_new_link(event) else {
             return event.clone();
         };
 
-        if !self.is_guard_target(&url_event.dest_url) {
+        if !self.is_guard_target(&url_event.dest_url()) {
             return event.clone();
         }
 
         Event::Start(Tag::Link {
             dest_url: CowStr::Borrowed(""),
-            title: url_event.title.clone(),
-            id: url_event.id.clone(),
-            link_type: match url_event.link_type {
+            title: url_event.title(),
+            id: url_event.id(),
+            link_type: match url_event.link_type() {
                 LinkType::Reference => LinkType::ReferenceUnknown,
                 LinkType::Collapsed => LinkType::CollapsedUnknown,
                 LinkType::Shortcut => LinkType::ShortcutUnknown,
@@ -72,45 +74,66 @@ impl LinkAdjuster {
     fn adjust_for_embed<'i>(&self, event: &Event<'i>) -> Event<'i> {
         match event {
             Event::Start(Tag::Link { .. }) => {
-                let url_event = &mut MdEvent::as_link(event).unwrap();
-                url_event.link_type = Self::to_embeding_type(&url_event.link_type);
-                url_event.to_link()
+                let url_event = UrlEvent::try_new_link(event).unwrap();
+                let link_type = Self::to_embeding_type(&url_event.link_type());
+                url_event.with_link_type(link_type).to_link()
             }
             Event::Start(Tag::Image { .. }) => {
-                let url_event = &mut MdEvent::as_image(event).unwrap();
-                url_event.link_type = Self::to_embeding_type(&url_event.link_type);
-                url_event.to_image()
+                let url_event = UrlEvent::try_new_image(event).unwrap();
+                let link_type = Self::to_embeding_type(&url_event.link_type());
+                url_event.with_link_type(link_type).to_image()
             }
             _ => event.clone(),
         }
     }
 
-    /// Returns event that adjusted for `Self` replacing.
-    fn adjust_for_self<'i>(&self, event: &Event<'i>) -> Event<'i> {
-        if !Self::is_link_with_self(event) {
+    /// Returns event that adjusted for `doc_share::Self` replacing.
+    fn adjust_for_self<'i>(&mut self, event: &Event<'i>) -> Event<'i> {
+        if !Self::is_link_with_self(event) && !self.in_self_shortcut {
             return event.clone();
         }
 
-        let mut ret = MdEvent::as_link(event).unwrap();
+        if !self.in_self_shortcut {
+            self.in_self_shortcut = true;
+        } else {
+            if Self::is_link_end(event) {
+                self.in_self_shortcut = false;
+            }
+
+            return match TextEvent::try_new(event) {
+                None => event.clone(),
+                Some(x) => {
+                    let text = &doc_share_self::replace_text(&x.text);
+                    x.with_text(text).to_event()
+                }
+            };
+        }
+
+        let link = UrlEvent::try_new_link(event).unwrap();
         let self_item = self.self_item.as_ref();
-        let new_id = rs_doc_link::replace_self(&ret.id, self_item);
-        let new_url = rs_doc_link::replace_self(&ret.dest_url, self_item);
+        let new_id = doc_share_self::replace_url(&link.id(), self_item);
+        let new_url = doc_share_self::replace_url(&link.dest_url(), self_item);
         let use_url = !new_url.is_empty();
-        ret.link_type = LinkType::Inline;
-        ret.dest_url = (if use_url { new_url } else { new_id }).into();
-        ret.to_link()
+        link.with_link_type(LinkType::Inline)
+            .with_dest_url(if use_url { &new_url } else { &new_id })
+            .to_link()
     }
 
-    /// Returns `true` if event is link with `Self`.
+    /// Returns `true` if event is link with `doc_share::Self`.
     fn is_link_with_self(event: &Event) -> bool {
-        match MdEvent::as_link(event) {
+        match UrlEvent::try_new_link(event) {
             None => false,
-            Some(UrlEvent { id, dest_url, .. }) => {
-                let id_has_self = rs_doc_link::has_self(&id);
-                let url_has_self = rs_doc_link::has_self(&dest_url);
+            Some(x) => {
+                let id_has_self = doc_share_self::is_target(&x.id());
+                let url_has_self = doc_share_self::is_target(&x.dest_url());
                 id_has_self || url_has_self
             }
         }
+    }
+
+    /// Returns `true` if event is link end.
+    fn is_link_end(event: &Event) -> bool {
+        matches!(event, Event::End(TagEnd::Link))
     }
 
     /// Returns embeding link type for given link type.

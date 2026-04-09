@@ -1,7 +1,7 @@
 //! Item paths.
 
 use crate::print::terms::*;
-use crate::util::syn_tool::*;
+use crate::util::syn_tools::*;
 
 /// Returns path of head macro.
 pub(crate) fn head_macro() -> syn::Path {

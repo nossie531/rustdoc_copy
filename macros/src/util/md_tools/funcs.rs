@@ -1,6 +1,6 @@
 //! Utility functions for Markdown.
 
-use crate::util::md_tool::md_print::*;
+use crate::util::md_tools::md_print::*;
 use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
 
 /// Returns plain text of Markdown events.

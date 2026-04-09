@@ -1,6 +1,6 @@
 //! Item IDs.
 
-use crate::util::syn_tool::*;
+use crate::util::syn_tools::*;
 
 /// Name of head macros.
 const HEAD: &str = "head";

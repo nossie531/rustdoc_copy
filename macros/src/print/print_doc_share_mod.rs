@@ -2,14 +2,14 @@
 
 use crate::doc_parts::*;
 use crate::print::terms::*;
-use crate::util::syn_tool::*;
+use crate::util::syn_tools::*;
 use crate::*;
 use proc_macro2::TokenStream;
 
 /// Returns tokens of given [`DocShareMod`].
-pub(crate) fn print_doc_share_mod(doc_item_mod: &DocShareMod) -> TokenStream {
-    let mod_id = doc_item_mod.mod_id();
-    let base_item = doc_item_mod.item().as_ref() as &BaseItem;
+pub(crate) fn print_doc_share_mod(doc_share_mod: &DocShareMod) -> TokenStream {
+    let mod_id = doc_share_mod.mod_id();
+    let base_item = doc_share_mod.item().as_ref() as &BaseItem;
     print_doc_item(mod_id, base_item)
 }
 
@@ -26,7 +26,7 @@ fn print_doc_item(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
 
 /// Returns simple document item tokens.
 fn print_simple_doc_item(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
-    let md = &doc_attr::read(item.attrs());
+    let md = &doc_attr::read_attrs(item.attrs());
     let path = &ns::path([mod_id]);
     let chunk = &parse::parse_rs_doc(item.get(), md);
     let chunk_mod = &DocChunkMod::new_root(path, chunk);
@@ -47,7 +47,7 @@ fn print_complex_doc_item(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
 
 /// Returns base module tokens.
 fn print_base(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
-    let md = &doc_attr::read(item.attrs());
+    let md = &doc_attr::read_attrs(item.attrs());
     let path = &paths::base(mod_id);
     let chunk = &parse::parse_rs_doc(item.get(), md);
     let chunk_mod = &DocChunkMod::new_root(path, chunk);
@@ -58,9 +58,9 @@ fn print_base(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
 fn print_side(mod_id: &syn::Ident, item: &BaseItem) -> TokenStream {
     let mut contents = TokenStream::new();
 
-    for ref side in item.sides() {
-        let md = &doc_attr::read(side.attrs());
-        let id = &ns::id(side.id());
+    for (i, ref side) in item.sides().enumerate() {
+        let md = &doc_attr::read_attrs(side.attrs());
+        let id = &ns::id(&side.id(i));
         let path = &paths::side_item(mod_id, id);
         let chunk = &parse::parse_rs_doc(item.get(), md);
         let chunk_mod = &DocChunkMod::new_root(path, chunk);

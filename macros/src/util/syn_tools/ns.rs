@@ -1,7 +1,6 @@
 //! Naming system.
 
 use proc_macro2::Span;
-use syn::PathSegment;
 use syn::punctuated::Punctuated;
 
 /// Retruns a new identifier.
@@ -37,7 +36,7 @@ fn new_path() -> syn::Path {
 /// Returns new segments.
 fn segments<'a>(
     idents: impl IntoIterator<Item = &'a syn::Ident>,
-) -> impl IntoIterator<Item = PathSegment> {
+) -> impl IntoIterator<Item = syn::PathSegment> {
     idents.into_iter().map(|ident| syn::PathSegment {
         ident: ident.clone(),
         arguments: syn::PathArguments::None,

@@ -4,6 +4,7 @@
 
 pub(crate) mod doc_attr;
 pub(crate) mod ns;
+pub(crate) mod side_items;
 pub(crate) use base_item::*;
 pub(crate) use funcs::*;
 pub(crate) use side_item::*;

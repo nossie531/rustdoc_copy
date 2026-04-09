@@ -20,6 +20,17 @@ pub fn doc_file(input: pm::TokenStream) -> pm::TokenStream {
 
 /// Shares documentation comment as given name module.
 ///
+/// # `doc_share::Self`
+///
+/// `doc_share` enables `doc_share::Self` in API paths in document.
+/// This is similar to `Self` at there. But while the latter changes
+/// the meaning of the target before and after copying the document,
+/// the former keeps the target.
+/// 
+/// In shortcut style link, `"doc_share::"` prefix is removed
+/// at link text. For example, ``[`doc_share::Self::item`]`` is
+/// parsed as ``[`Self::item`](SomeTarget::item)``.
+///
 /// # Examples
 ///
 /// ```
@@ -55,7 +66,7 @@ pub fn doc_share(attr: pm::TokenStream, body: pm::TokenStream) -> pm::TokenStrea
 /// attribute are used in combination. First, if `doc_on` is OFF, most items
 /// are replaced with items that have only their entry points. This speed up
 /// the build process. However, since document copy is not generated, its
-/// importing part cause compiation errors. Here, to avoid this error,
+/// importing part cause compilation errors. Here, to avoid this error,
 /// [`doc_on_only`](Self) generates empty document when `doc_on` is OFF.
 ///
 /// # Build settings
@@ -81,13 +92,13 @@ pub fn doc_share(attr: pm::TokenStream, body: pm::TokenStream) -> pm::TokenStrea
 /// ```
 ///
 /// -&nbsp;`.vscode/settings.json`
-/// 
+///
 /// ```text
 /// {"rust-analyzer.cargo.allFeatures": true}
 /// ```
 ///
 /// This example roughly does the following.
-/// 
+///
 /// - Define a feature flag named `doc_on` in the crate.
 /// - Propagates it to the feature flag of the same name in this crate.
 /// - Configures to enable the `doc_on` flag in [`docs.rs`](https://docs.rs/).

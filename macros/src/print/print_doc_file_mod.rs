@@ -1,7 +1,7 @@
 //! Provider of [`print_doc_file_mod`].
 
 use crate::doc_parts::*;
-use crate::util::syn_tool::*;
+use crate::util::syn_tools::*;
 use crate::*;
 use proc_macro2::TokenStream;
 
