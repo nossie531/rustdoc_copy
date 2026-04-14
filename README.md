@@ -24,15 +24,15 @@ _Forgive me if the document is hard to read._
 
 🤔 Cons
 
-- [No IDE support][c1] (expecting future IDE).
-- [No root document sharing][c2] (expecting futrue Rust).
-- [No file update detecting][c3] (expecting futrue Rust).
+- [No tooltip display at IDE][c1] (expecting future IDE).
+- [No file update detecting at IDE][c2] (expecting futrue Rust).
+- [No root document sharing][c3] (expecting futrue Rust).
 - [Miss copy of document][c4] (expecting futrue crates for Markdown).
 - [Mysterious compilation troubles][c5] (maybe not a big deal).
 
-[c1]: #no-ide-support
-[c2]: #no-root-document-shareing
-[c3]: #no-file-update-detecting
+[c1]: #no-tooltip-display-at-ide
+[c2]: #no-file-update-detecting-at-ide
+[c3]: #no-root-document-shareing
 [c4]: #miss-copy-of-document
 [c5]: #mysterious-compilation-troubles
 
@@ -252,11 +252,20 @@ To prevent broken links, folowing mechanisms are supported.
 
 ## Trouble shooting
 
-### No IDE support
+### No tooltip display at IDE
 
 This crate uses the `doc` attribute frequently for document importing.
 But documentation by `doc` attributes are reflected only rustdoc file,
 not IDE tooltips (At least VS Code with rust-analyzer in 2026).
+
+### No file update detecting at IDE
+
+At `doc_file`, argument file is not tracked on real time from IDE. Therefore,
+error detection and autocompletion at IDE is based on old Markdown headings.
+This state will remain until rebuild. (I wonder this issue will be resolved
+by [`proc_macro::tracked::path`][ptp] in the future.)
+
+[ptp]: https://doc.rust-lang.org/proc_macro/tracked/fn.path.html
 
 ### No root document shareing
 
@@ -265,15 +274,6 @@ notation like `#![doc_share(doc)]` are not supported. (I wonder this issue will
 be resolved by [inner macro attribute][rust_issues_54726] in the future.)
 
 [rust_issues_54726]: https://github.com/rust-lang/rust/issues/54726
-
-### No file update detecting
-
-At `doc_file`, argument file is not tracked on real time from IDE. Therefore,
-error detection and autocompletion at IDE is based on old Markdown headings.
-This state will remain until rebuild. (I wonder this issue will be resolved
-by [`proc_macro::tracked::path`][ptp] in the future.)
-
-[ptp]: https://doc.rust-lang.org/proc_macro/tracked/fn.path.html
 
 ### Miss copy of document
 
