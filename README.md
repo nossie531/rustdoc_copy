@@ -24,17 +24,15 @@ _Forgive me if the document is hard to read._
 
 🤔 Cons
 
-- [No tooltip display at IDE][c1] (expecting future IDE).
-- [No file update detecting at IDE][c2] (expecting futrue Rust).
-- [No root document sharing][c3] (expecting futrue Rust).
-- [Miss copy of document][c4] (expecting futrue crates for Markdown).
-- [Mysterious compilation troubles][c5] (maybe not a big deal).
+- [No file update detecting at IDE][c1] (expecting futrue Rust).
+- [No root document sharing][c2] (expecting futrue Rust).
+- [Miss copy of document][c3] (expecting futrue crates for Markdown).
+- [Mysterious compilation troubles][c4] (maybe not a big deal).
 
-[c1]: #no-tooltip-display-at-ide
-[c2]: #no-file-update-detecting-at-ide
-[c3]: #no-root-document-shareing
-[c4]: #miss-copy-of-document
-[c5]: #mysterious-compilation-troubles
+[c1]: #no-file-update-detecting-at-ide
+[c2]: #no-root-document-shareing
+[c3]: #miss-copy-of-document
+[c4]: #mysterious-compilation-troubles
 
 ## Examples
 
@@ -251,12 +249,6 @@ To prevent broken links, folowing mechanisms are supported.
   document for more detail.
 
 ## Trouble shooting
-
-### No tooltip display at IDE
-
-This crate uses the `doc` attribute frequently for document importing.
-But documentation by `doc` attributes are reflected only rustdoc file,
-not IDE tooltips (At least VS Code with rust-analyzer in 2026).
 
 ### No file update detecting at IDE
 
